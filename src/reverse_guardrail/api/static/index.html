@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reverse-Guardrail 🛡️ | LLM Security Assessment Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/jpeg" href="/static/logo.jpg">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <!-- Background Glow FX -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand-badge">
+        <img src="/static/logo.jpg" alt="Kitsune Logo" class="brand-logo-img">
+        <div class="brand-info">
+          <h1>KITSUNE <span class="brand-sub">REVERSE-GUARDRAIL</span></h1>
+          <span class="subtitle">System Prompt Leakage & Soft-Injection Testing Engine</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="api-status-pill" id="apiStatusPill">
+        <span class="status-dot"></span>
+        <span id="apiStatusText">API Online</span>
+      </div>
+      <div class="model-badge">
+        <span class="model-tag">LLM: DeepSeek-v4-Flash</span>
+        <span class="model-tag">Embed: Gemini-001</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid Layout -->
+  <main class="main-container">
+    <!-- Left Panel: Configuration & Target Setup -->
+    <section class="panel config-panel">
+      <div class="panel-header">
+        <h2>🎯 Configurazione Target & Scope</h2>
+        <span class="badge badge-scope" id="scopeGateBadge">Kill-Switch Armato</span>
+      </div>
+
+      <!-- Scope Gate (Mandatory Kill-switch) -->
+      <div class="scope-gate-box">
+        <div class="scope-gate-title">
+          <span class="alert-icon">⚠️</span>
+          <strong>Regole di Ingaggio & Scope Gate</strong>
+        </div>
+        <p class="scope-note">Il test si avvia esclusivamente previa autorizzazione scritta e identificativo di ingaggio.</p>
+        
+        <div class="form-group checkbox-group">
+          <label class="custom-checkbox">
+            <input type="checkbox" id="authCheckbox" checked>
+            <span class="checkmark"></span>
+            <span class="checkbox-label"><strong>target.authorized: true</strong> (Autorizzazione formale confermata)</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="engagementId">Engagement ID (Obbligatorio)</label>
+          <input type="text" id="engagementId" value="ENG-SEC-AUDIT-2026-001" placeholder="es. ENG-AUDIT-2026-001" required>
+        </div>
+      </div>
+
+      <!-- Target Mode Switcher -->
+      <div class="form-section">
+        <label class="section-label">Modalità Target (SUT)</label>
+        <div class="mode-tabs">
+          <button type="button" class="mode-tab active" data-mode="browser">🌐 Browser-Use (Web UI)</button>
+          <button type="button" class="mode-tab" data-mode="http">🔌 Endpoint HTTP/REST</button>
+          <button type="button" class="mode-tab" data-mode="mock">🧪 Mock Guardrail</button>
+        </div>
+      </div>
+
+      <!-- Target URL -->
+      <div class="form-group" id="urlGroup">
+        <label for="targetUrl">URL / Endpoint del Guardrail Target</label>
+        <input type="url" id="targetUrl" value="https://chat.target.internal" placeholder="https://chat.target.internal o http://localhost:8000/api/chat">
+      </div>
+
+      <!-- Browser Mode Options (Cookies & Selectors) -->
+      <div id="browserOptions" class="mode-options">
+        <div class="form-group">
+          <div class="label-with-action">
+            <label for="cookiesInput">Cookie di Sessione (Pre-autenticazione / Login)</label>
+            <div class="quick-links">
+              <button type="button" class="btn-xs" id="btnExampleCookieJson">Esempio JSON</button>
+              <button type="button" class="btn-xs" id="btnExampleCookieHeader">Esempio Header</button>
+            </div>
+          </div>
+          <textarea id="cookiesInput" rows="3" placeholder='[{"name": "session_id", "value": "tok_9912", "domain": "chat.target.internal"}] o session_id=tok_9912; auth=true'></textarea>
+        </div>
+
+        <details class="advanced-details">
+          <summary>⚙️ Selettori Web & Opzioni Browser</summary>
+          <div class="details-content">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="inputSelector">Input Selector</label>
+                <input type="text" id="inputSelector" placeholder="textarea, #chat-input (auto-detect se vuoto)">
+              </div>
+              <div class="form-group">
+                <label for="submitSelector">Submit Selector</label>
+                <input type="text" id="submitSelector" placeholder="button[type='submit'] (invio Enter se vuoto)">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="responseSelector">Assistant Response Selector</label>
+                <input type="text" id="responseSelector" placeholder=".assistant-message, .bot-response">
+              </div>
+              <div class="form-group checkbox-align">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="headlessCheckbox" checked>
+                  <span class="checkmark"></span>
+                  <span class="checkbox-label">Modalità Headless</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- HTTP Mode Options -->
+      <div id="httpOptions" class="mode-options hidden">
+        <div class="form-group">
+          <label for="httpAuthHeader">Custom Authorization Header</label>
+          <input type="text" id="httpAuthHeader" placeholder="Bearer eyJhbGciOi...">
+        </div>
+      </div>
+
+      <!-- Probing Parameters -->
+      <div class="form-section">
+        <label class="section-label">Parametri di Probing & Closed Loop</label>
+        <div class="form-row three-cols">
+          <div class="form-group">
+            <label for="maxRounds">Max Rounds</label>
+            <input type="number" id="maxRounds" value="4" min="1" max="20">
+          </div>
+          <div class="form-group">
+            <label for="attemptsPerRound">Sonde / Round</label>
+            <input type="number" id="attemptsPerRound" value="4" min="1" max="15">
+          </div>
+          <div class="form-group">
+            <label for="confThreshold">Soglia Confidenza</label>
+            <input type="number" id="confThreshold" value="0.85" min="0.1" max="1.0" step="0.05">
+          </div>
+        </div>
+      </div>
+
+      <!-- Launch Action -->
+      <button type="button" class="btn btn-primary btn-launch" id="btnLaunch">
+        <span class="btn-icon">🚀</span>
+        <span id="btnLaunchText">Avvia Reverse-Guardrail Assessment</span>
+      </button>
+    </section>
+
+    <!-- Right Panel: Live Assessment Cockpit & Results -->
+    <section class="panel results-panel">
+      <!-- Live Metrics Bar -->
+      <div class="metrics-bar">
+        <div class="metric-card">
+          <span class="metric-title">Stato Pipeline</span>
+          <span class="metric-value status-idle" id="metricStatus">IDLE</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-title">Round Corrente</span>
+          <span class="metric-value" id="metricRound">0 / 0</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-title">Confidenza Ricostruzione</span>
+          <div class="metric-conf-wrapper">
+            <span class="metric-value highlight" id="metricConfidence">0.0%</span>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="confProgressBar" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="metric-card">
+          <span class="metric-title">Frammenti Leakati</span>
+          <span class="metric-value" id="metricFragments">0</span>
+        </div>
+      </div>
+
+      <!-- Results Navigation Tabs -->
+      <div class="results-tabs">
+        <button type="button" class="tab-btn active" data-tab="promptTab">📝 System Prompt Ricostruito</button>
+        <button type="button" class="tab-btn" data-tab="sectionsTab">📊 Sezioni & Gaps</button>
+        <button type="button" class="tab-btn" data-tab="fragmentsTab">🔍 Frammenti Estratti</button>
+        <button type="button" class="tab-btn" data-tab="vulnTab">🔓 Vulnerability Assessment</button>
+        <button type="button" class="tab-btn" data-tab="hardeningTab">🛡️ Hardening & Remediation</button>
+        <button type="button" class="tab-btn" data-tab="logsTab">📜 Console & Audit Trail</button>
+      </div>
+
+      <!-- Tab 1: Reconstructed System Prompt -->
+      <div class="tab-content active" id="promptTab">
+        <div class="prompt-viewer-header">
+          <span class="viewer-title">Synthesized Best-Effort SYSTEM PROMPT</span>
+          <button type="button" class="btn btn-sm btn-secondary" id="btnCopyPrompt">📋 Copia Prompt</button>
+        </div>
+        <div class="prompt-code-box">
+          <pre><code id="reconstructedPromptContent">In attesa dell'avvio della pipeline...
+
+Il prompt ricostruito dai 4 agenti (Tester -> Guardrail -> Inspectioner -> DB -> Reverse Prompt Engineer) apparirà qui al completamento di ogni round.</code></pre>
+        </div>
+      </div>
+
+      <!-- Tab 2: Covered Sections & Residual Gaps -->
+      <div class="tab-content" id="sectionsTab">
+        <div class="sections-grid" id="sectionsContainer">
+          <div class="empty-state">Nessuna sezione analizzata ancora.</div>
+        </div>
+        <div class="gaps-box">
+          <h3>🎯 Gaps Residui (Target del prossimo round)</h3>
+          <ul id="gapsList" class="gaps-list">
+            <li>In attesa di esecuzione...</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Tab 3: Extracted Fragments Explorer -->
+      <div class="tab-content" id="fragmentsTab">
+        <div class="fragments-filter-bar">
+          <span>Filtra per Categoria:</span>
+          <select id="fragCategoryFilter">
+            <option value="ALL">Tutte le Categorie</option>
+            <option value="role_persona">Role & Persona</option>
+            <option value="instruction">Instruction</option>
+            <option value="constraint_negative_rule">Negative Constraints</option>
+            <option value="tool_reference">Tools & Functions</option>
+            <option value="security_token">Security Tokens</option>
+            <option value="formatting_rule">Formatting Rules</option>
+            <option value="refusal_pattern">Refusal Patterns</option>
+          </select>
+        </div>
+        <div class="fragments-table-container">
+          <table class="data-table" id="fragmentsTable">
+            <thead>
+              <tr>
+                <th>Round</th>
+                <th>Categoria</th>
+                <th>Testo Frammento Leakato</th>
+                <th>Confidenza</th>
+                <th>Strategia Sorgente</th>
+              </tr>
+            </thead>
+            <tbody id="fragmentsTableBody">
+              <tr>
+                <td colspan="5" class="text-center">Nessun frammento registrato.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 4: Vulnerability Assessment (Phase 2) -->
+      <div class="tab-content" id="vulnTab">
+        <div class="vuln-metrics-row">
+          <div class="vuln-metric-pill">
+            <span class="vuln-metric-label">Delimiter Isolation</span>
+            <span class="vuln-metric-val" id="vulnScoreDelimiter">--</span>
+          </div>
+          <div class="vuln-metric-pill">
+            <span class="vuln-metric-label">Directive Ambiguity</span>
+            <span class="vuln-metric-val" id="vulnScoreAmbiguity">--</span>
+          </div>
+          <div class="vuln-metric-pill">
+            <span class="vuln-metric-label">Secret Exposure Risk</span>
+            <span class="vuln-metric-val" id="vulnScoreSecret">--</span>
+          </div>
+          <div class="vuln-metric-pill">
+            <span class="vuln-metric-label">Overall Risk Rating</span>
+            <span class="sev-badge sev-info" id="vulnScoreOverall">IDLE</span>
+          </div>
+        </div>
+
+        <div class="vuln-list-container" id="vulnListContainer">
+          <div class="empty-state">L'analisi delle vulnerabilità si attiverà al termine della ricostruzione del System Prompt.</div>
+        </div>
+      </div>
+
+      <!-- Tab 5: Hardening & Remediation (Phase 2) -->
+      <div class="tab-content" id="hardeningTab">
+        <!-- Score Delta Header -->
+        <div class="hardening-score-header">
+          <div class="score-delta-box">
+            <span class="score-delta-label">Robustezza Strutturale Prima / Dopo:</span>
+            <div class="score-delta-values">
+              <span class="score-before" id="scoreBeforeHardening">--</span>
+              <span class="score-arrow">➔</span>
+              <span class="score-after" id="scoreAfterHardening">--</span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-secondary" id="btnCopyHardenedPrompt">📋 Copia Prompt Hardened</button>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="executive-summary-card">
+          <div class="summary-card-title">📋 Executive Summary & Security Posture</div>
+          <p id="hardeningExecSummary">In attesa dell'elaborazione del report difensivo...</p>
+        </div>
+
+        <!-- Section Remediations (Before/After) -->
+        <div class="remediations-container" id="remediationsContainer">
+          <div class="empty-state">Nessuna remediation disponibile finché la pipeline non è completata.</div>
+        </div>
+
+        <!-- Full Hardened Prompt Viewer -->
+        <div class="prompt-viewer-header" style="margin-top: 24px;">
+          <span class="viewer-title">🛡️ Complete Hardened Production System Prompt</span>
+        </div>
+        <div class="prompt-code-box">
+          <pre><code id="hardenedPromptContent">Il prompt hardened e strutturato con isolamento XML e regole di precedenza apparirà qui.</code></pre>
+        </div>
+
+        <!-- Architectural Defense Patterns -->
+        <div class="arch-recs-box" style="margin-top: 20px;">
+          <h3>🏗️ Raccomandazioni Architetturali Difensive (Defense-in-Depth)</h3>
+          <ul id="archRecsList" class="gaps-list">
+            <li>In attesa di esecuzione...</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Tab 6: Console & Audit Logs -->
+      <div class="tab-content" id="logsTab">
+        <div class="log-console" id="logConsole">
+          <div class="log-line info">[System] Reverse-Guardrail Frontend Dashboard inizializzato.</div>
+          <div class="log-line info">[Security] Scope Authorization Kill-Switch attivo.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

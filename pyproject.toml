@@ -1,0 +1,33 @@
+[project]
+name = "reverse-guardrail"
+version = "0.1.0"
+description = "Red-teaming and security testing pipeline for LLM guardrail system prompt reconstruction."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.6.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "langgraph>=0.0.30",
+    "langchain-core>=0.1.30",
+    "httpx>=0.27.0",
+    "pyyaml>=6.0.1",
+    "numpy>=1.26.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]

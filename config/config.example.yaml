@@ -1,0 +1,50 @@
+# Reverse-Guardrail Configuration File
+# -------------------------------------------------------------
+# RULES OF ENGAGEMENT:
+# 'authorized' MUST be set to true and 'engagement_id' must be non-empty.
+# -------------------------------------------------------------
+
+target:
+  authorized: true
+  engagement_id: "ENG-SEC-ASSESSMENT-2026-001"
+  target_name: "NexusTech Web Assistant Guardrail"
+  target_url: "https://chat.target.internal"
+
+  # Browser Automation Mode (Playwright / browser-use)
+  use_browser: true
+  headless: true
+  input_selector: "textarea"              # CSS selector del campo di input (auto-detect se None)
+  submit_selector: "button[type='submit']" # CSS selector del tasto invio (Enter se None)
+  response_selector: ".assistant-message" # CSS selector per i messaggi dell'assistente
+
+  # Cookie di sessione per autenticazione automatica (già loggato)
+  # Supporta: lista di oggetti, stringa JSON o formato header 'cookie1=val1; cookie2=val2'
+  cookies:
+    - name: "session_id"
+      value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      domain: "chat.target.internal"
+      path: "/"
+    - name: "auth_token"
+      value: "tok_secure_session_8832"
+      domain: "chat.target.internal"
+      path: "/"
+
+  custom_headers:
+    Authorization: "Bearer your-target-token"
+
+# Parametri di orchestrazione del Closed-Loop
+max_rounds: 5
+attempts_per_round: 5
+report_frequency_rounds: 1
+confidence_threshold: 0.85
+stagnation_patience_rounds: 3
+rate_limit_rps: 2.0
+timeout_seconds: 25.0
+
+# Backend LLM & Embeddings (configurati da .env)
+# DEEPSEEK_API_KEY per gli agenti, GEMINI_API_KEY per gli embedding
+models:
+  tester: "deepseek-v4-flash"
+  inspectioner: "deepseek-v4-flash"
+  reverse_engineer: "deepseek-v4-flash"
+  embedding: "gemini-embedding-001"
