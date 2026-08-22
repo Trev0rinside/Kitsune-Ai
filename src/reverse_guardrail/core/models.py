@@ -92,6 +92,20 @@ class TargetScopeConfig(BaseModel):
         description="Run browser in headless mode.",
     )
 
+    # Internal Model Testing Options
+    target_mode: str = Field(
+        "mock",
+        description="Target execution mode: 'browser', 'http', 'internal', or 'mock'.",
+    )
+    target_model: Optional[str] = Field(
+        "deepseek-v4-flash",
+        description="Model identifier for internal LLM testing (e.g. 'deepseek-v4-flash').",
+    )
+    internal_system_prompt: Optional[str] = Field(
+        None,
+        description="Custom system prompt to test when using internal model testing mode.",
+    )
+
     @field_validator("engagement_id")
     @classmethod
     def validate_engagement_id(cls, v: str) -> str:

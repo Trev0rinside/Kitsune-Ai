@@ -39,6 +39,18 @@ class PipelineRunner:
 
         if target is not None:
             self.target = target
+        elif self.config.target.target_mode == "internal" or (
+            not self.config.target.target_url
+            and not self.config.target.use_browser
+            and self.config.target.target_mode != "mock"
+            and not self.config.target.target_name.startswith("mock")
+        ):
+            from reverse_guardrail.guardrail.internal_target import InternalLLMGuardrailTarget
+            self.target = InternalLLMGuardrailTarget(
+                scope_config=self.config.target,
+                system_prompt=self.config.target.internal_system_prompt,
+                model_spec=self.config.target.target_model or "deepseek-v4-flash",
+            )
         elif self.config.target.use_browser and self.config.target.target_url:
             from reverse_guardrail.guardrail.browser_target import BrowserGuardrailTarget
             self.target = BrowserGuardrailTarget(

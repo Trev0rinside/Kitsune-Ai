@@ -73,20 +73,41 @@
       <div class="form-section">
         <label class="section-label">Modalità Target (SUT)</label>
         <div class="mode-tabs">
-          <button type="button" class="mode-tab active" data-mode="browser">🌐 Browser-Use (Web UI)</button>
+          <button type="button" class="mode-tab active" data-mode="internal">🧠 Modello Interno (DeepSeek API)</button>
+          <button type="button" class="mode-tab" data-mode="browser">🌐 Browser-Use (Web UI)</button>
           <button type="button" class="mode-tab" data-mode="http">🔌 Endpoint HTTP/REST</button>
-          <button type="button" class="mode-tab" data-mode="mock">🧪 Mock Guardrail</button>
+          <button type="button" class="mode-tab" data-mode="mock">🧪 Mock Simulator</button>
+        </div>
+      </div>
+
+      <!-- Internal LLM Mode Options (Direct API Testing) -->
+      <div id="internalOptions" class="mode-options">
+        <div class="form-group">
+          <label for="internalModelSpec">Modello Sotto Test (LLM Target)</label>
+          <select id="internalModelSpec">
+            <option value="deepseek-v4-flash" selected>DeepSeek-v4-Flash (Live API)</option>
+            <option value="deepseek-chat">DeepSeek Chat</option>
+            <option value="ollama/llama3">Ollama / Llama3 (Locale)</option>
+            <option value="mock">Mock Simulator</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="label-with-action">
+            <label for="internalSystemPrompt">System Prompt del Target (da Proteggere)</label>
+            <button type="button" class="btn-xs" id="btnLoadDefaultPrompt">Carica Ground-Truth NexusTech</button>
+          </div>
+          <textarea id="internalSystemPrompt" rows="6" placeholder="# NexusTech Enterprise Guardrail System Prompt&#10;&#10;Inserisci il System Prompt che il modello riceverà e che Kitsune cercherà di ricostruire ed analizzare..."></textarea>
         </div>
       </div>
 
       <!-- Target URL -->
-      <div class="form-group" id="urlGroup">
+      <div class="form-group hidden" id="urlGroup">
         <label for="targetUrl">URL / Endpoint del Guardrail Target</label>
         <input type="url" id="targetUrl" value="https://chat.target.internal" placeholder="https://chat.target.internal o http://localhost:8000/api/chat">
       </div>
 
       <!-- Browser Mode Options (Cookies & Selectors) -->
-      <div id="browserOptions" class="mode-options">
+      <div id="browserOptions" class="mode-options hidden">
         <div class="form-group">
           <div class="label-with-action">
             <label for="cookiesInput">Cookie di Sessione (Pre-autenticazione / Login)</label>
