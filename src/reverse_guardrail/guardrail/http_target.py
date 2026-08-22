@@ -37,6 +37,13 @@ class HttpGuardrailTarget(BaseGuardrailTarget):
             **self.scope_config.custom_headers,
         }
 
+        if self.scope_config.api_token:
+            token = self.scope_config.api_token.strip()
+            if not token.lower().startswith("bearer ") and not token.lower().startswith("basic "):
+                headers["Authorization"] = f"Bearer {token}"
+            else:
+                headers["Authorization"] = token
+
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             resp = await client.post(self.target_url, json=body, headers=headers)
             latency_ms = (time.monotonic() - start) * 1000.0

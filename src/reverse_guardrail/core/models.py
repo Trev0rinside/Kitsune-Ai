@@ -66,6 +66,10 @@ class TargetScopeConfig(BaseModel):
         default_factory=dict,
         description="Custom headers (e.g. Bearer auth, custom tenant ID).",
     )
+    api_token: Optional[str] = Field(
+        None,
+        description="Optional API Token / Bearer key for HTTP endpoint authentication.",
+    )
     # Browser Target Options
     use_browser: bool = Field(
         False,

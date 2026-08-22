@@ -151,9 +151,15 @@
 
       <!-- HTTP Mode Options -->
       <div id="httpOptions" class="mode-options hidden">
-        <div class="form-group">
-          <label for="httpAuthHeader">Custom Authorization Header</label>
-          <input type="text" id="httpAuthHeader" placeholder="Bearer eyJhbGciOi...">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="httpApiToken">API Token / Bearer Key (Opzionale)</label>
+            <input type="password" id="httpApiToken" placeholder="sk-xxxx / eyJhbGciOi...">
+          </div>
+          <div class="form-group">
+            <label for="httpAuthHeader">Custom Header Completo (Opzionale)</label>
+            <input type="text" id="httpAuthHeader" placeholder="X-API-Key: secret_token_123">
+          </div>
         </div>
       </div>
 

@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const submitSelectorInput = document.getElementById('submitSelector');
   const responseSelectorInput = document.getElementById('responseSelector');
   const headlessCheckbox = document.getElementById('headlessCheckbox');
+  const httpApiTokenInput = document.getElementById('httpApiToken');
   const httpAuthHeaderInput = document.getElementById('httpAuthHeader');
 
   const maxRoundsInput = document.getElementById('maxRounds');
@@ -248,11 +249,18 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
       submit_selector: submitSelectorInput.value.trim() || null,
       response_selector: responseSelectorInput.value.trim() || null,
       headless: headlessCheckbox.checked,
+      api_token: (currentTargetMode === 'http' && httpApiTokenInput && httpApiTokenInput.value.trim()) ? httpApiTokenInput.value.trim() : null,
       custom_headers: {}
     };
 
-    if (currentTargetMode === 'http' && httpAuthHeaderInput.value.trim()) {
-      targetConfig.custom_headers['Authorization'] = httpAuthHeaderInput.value.trim();
+    if (currentTargetMode === 'http' && httpAuthHeaderInput && httpAuthHeaderInput.value.trim()) {
+      const headerVal = httpAuthHeaderInput.value.trim();
+      if (headerVal.includes(':')) {
+        const [hKey, ...hRest] = headerVal.split(':');
+        targetConfig.custom_headers[hKey.trim()] = hRest.join(':').trim();
+      } else {
+        targetConfig.custom_headers['Authorization'] = headerVal;
+      }
     }
 
     const payload = {
