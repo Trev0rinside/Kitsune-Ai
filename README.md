@@ -12,7 +12,14 @@
   [![Gemini](https://img.shields.io/badge/Google_Gemini-gemini--embedding--001-4285F4.svg?logo=google&logoColor=white)](https://ai.google.dev)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
   [![Tests](https://img.shields.io/badge/Tests-40%20Passed%20(100%25)-brightgreen.svg)]()
+  [![Case Study](https://img.shields.io/badge/Whitepaper-DeepSeek--v4--Flash%20Case%20Study-cyan.svg)](./docs/CASE_STUDY_DEEPSEEK_RECONSTRUCTION.md)
 </div>
+
+---
+
+## 📖 Featured Case Study & Whitepaper
+
+👉 **[Read the Full Technical Case Study: How Kitsune Reconstructs Enterprise System Prompts with 85%+ Accuracy on Live DeepSeek-v4-Flash Models](./docs/CASE_STUDY_DEEPSEEK_RECONSTRUCTION.md)**
 
 ---
 
