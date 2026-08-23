@@ -106,42 +106,74 @@
         <input type="url" id="targetUrl" value="https://chat.target.internal" placeholder="https://chat.target.internal o http://localhost:8000/api/chat">
       </div>
 
-      <!-- Browser Mode Options (Cookies & Selectors) -->
+      <!-- Browser Mode Options (Chrome Profile, Cloudflare Bypass & Selectors) -->
       <div id="browserOptions" class="mode-options hidden">
+        <!-- Chrome Profile Mode (Anti-Cloudflare) -->
         <div class="form-group">
           <div class="label-with-action">
-            <label for="cookiesInput">Cookie di Sessione (Pre-autenticazione / Login)</label>
-            <div class="quick-links">
-              <button type="button" class="btn-xs" id="btnExampleCookieJson">Esempio JSON</button>
-              <button type="button" class="btn-xs" id="btnExampleCookieHeader">Esempio Header</button>
+            <label><strong>👤 Profilo Browser Chrome (Anti-Cloudflare & Sessione Reale)</strong></label>
+            <span class="badge badge-scope" style="font-size:0.7rem; background: rgba(16, 185, 129, 0.2); color: #10b981;">Attivo</span>
+          </div>
+          <div class="form-row">
+            <div class="form-group checkbox-align">
+              <label class="custom-checkbox">
+                <input type="checkbox" id="useChromeProfileCheckbox" checked>
+                <span class="checkmark"></span>
+                <span class="checkbox-label">Usa Profilo Chrome Reale</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label for="chromeProfileSelect">Profilo Selezionato</label>
+              <select id="chromeProfileSelect">
+                <option value="Profile 6" selected>Profile 6 (Giorgio - giorgio.sensi2002@gmail.com)</option>
+                <option value="Profile 1">Profile 1 (Giorgio - trevorinside.inside@gmail.com)</option>
+                <option value="Default">Default (G - Wings)</option>
+                <option value="Profile 7">Profile 7 (Becca)</option>
+                <option value="Profile 8">Profile 8 (stefano)</option>
+                <option value="Profile 9">Profile 9 (chiara)</option>
+              </select>
             </div>
           </div>
-          <textarea id="cookiesInput" rows="3" placeholder='[{"name": "session_id", "value": "tok_9912", "domain": "chat.target.internal"}] o session_id=tok_9912; auth=true'></textarea>
+          <div class="form-group" style="margin-top:0.5rem;">
+            <label for="userDataDirInput">Directory Dati Utente Chrome (macOS)</label>
+            <input type="text" id="userDataDirInput" value="/Users/giorgiosensi/Library/Application Support/Google/Chrome">
+          </div>
         </div>
 
         <details class="advanced-details">
-          <summary>⚙️ Selettori Web & Opzioni Browser</summary>
+          <summary>🍪 Cookie Manuali & Opzioni Avanzate Browser</summary>
           <div class="details-content">
+            <div class="form-group">
+              <div class="label-with-action">
+                <label for="cookiesInput">Cookie di Sessione Aggiuntivi (Opzionali)</label>
+                <div class="quick-links">
+                  <button type="button" class="btn-xs" id="btnExampleCookieJson">Esempio JSON</button>
+                  <button type="button" class="btn-xs" id="btnExampleCookieHeader">Esempio Header</button>
+                </div>
+              </div>
+              <textarea id="cookiesInput" rows="3" placeholder='[{"name": "session_id", "value": "tok_9912", "domain": "claude.ai"}]'></textarea>
+            </div>
+
             <div class="form-row">
               <div class="form-group">
-                <label for="inputSelector">Input Selector</label>
-                <input type="text" id="inputSelector" placeholder="textarea, #chat-input (auto-detect se vuoto)">
+                <label for="inputSelector">Input Selector (Auto-detect per Claude/ChatGPT)</label>
+                <input type="text" id="inputSelector" placeholder="div[contenteditable='true'], textarea (auto-detect se vuoto)">
               </div>
               <div class="form-group">
                 <label for="submitSelector">Submit Selector</label>
-                <input type="text" id="submitSelector" placeholder="button[type='submit'] (invio Enter se vuoto)">
+                <input type="text" id="submitSelector" placeholder="button[aria-label*='Send'], Enter">
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label for="responseSelector">Assistant Response Selector</label>
-                <input type="text" id="responseSelector" placeholder=".assistant-message, .bot-response">
+                <input type="text" id="responseSelector" placeholder=".font-claude-message, .assistant (auto-detect se vuoto)">
               </div>
               <div class="form-group checkbox-align">
                 <label class="custom-checkbox">
-                  <input type="checkbox" id="headlessCheckbox" checked>
+                  <input type="checkbox" id="headlessCheckbox">
                   <span class="checkmark"></span>
-                  <span class="checkbox-label">Modalità Headless</span>
+                  <span class="checkbox-label">Modalità Headless (Disattiva per Cloudflare)</span>
                 </label>
               </div>
             </div>

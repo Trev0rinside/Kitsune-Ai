@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const submitSelectorInput = document.getElementById('submitSelector');
   const responseSelectorInput = document.getElementById('responseSelector');
   const headlessCheckbox = document.getElementById('headlessCheckbox');
+  const useChromeProfileCheckbox = document.getElementById('useChromeProfileCheckbox');
+  const chromeProfileSelect = document.getElementById('chromeProfileSelect');
+  const userDataDirInput = document.getElementById('userDataDirInput');
   const httpApiTokenInput = document.getElementById('httpApiToken');
   const httpAuthHeaderInput = document.getElementById('httpAuthHeader');
 
@@ -126,9 +129,9 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
         browserOptions.classList.remove('hidden');
         httpOptions.classList.add('hidden');
         urlGroup.classList.remove('hidden');
-        targetUrlInput.placeholder = 'https://chat.target.internal';
-        if (targetUrlInput.value.includes('localhost:8000') || targetUrlInput.value.includes('localhost:8888')) {
-          targetUrlInput.value = 'https://chat.target.internal';
+        targetUrlInput.placeholder = 'https://claude.ai/new';
+        if (!targetUrlInput.value || targetUrlInput.value.includes('chat.target.internal') || targetUrlInput.value.includes('localhost:8000') || targetUrlInput.value.includes('localhost:8888')) {
+          targetUrlInput.value = 'https://claude.ai/new';
         }
       } else if (currentTargetMode === 'http') {
         if (internalOptions) internalOptions.classList.add('hidden');
@@ -249,6 +252,9 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
       submit_selector: submitSelectorInput.value.trim() || null,
       response_selector: responseSelectorInput.value.trim() || null,
       headless: headlessCheckbox.checked,
+      use_chrome_profile: useChromeProfileCheckbox ? useChromeProfileCheckbox.checked : true,
+      user_data_dir: userDataDirInput ? userDataDirInput.value.trim() : "/Users/giorgiosensi/Library/Application Support/Google/Chrome",
+      profile_directory: chromeProfileSelect ? chromeProfileSelect.value : "Profile 6",
       api_token: (currentTargetMode === 'http' && httpApiTokenInput && httpApiTokenInput.value.trim()) ? httpApiTokenInput.value.trim() : null,
       custom_headers: {}
     };

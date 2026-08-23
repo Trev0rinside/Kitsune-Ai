@@ -92,8 +92,20 @@ class TargetScopeConfig(BaseModel):
         description="CSS/XPath selector for assistant message bubbles (auto-detected if None).",
     )
     headless: bool = Field(
+        False,
+        description="Run browser in headless mode (set to False for anti-Cloudflare bypassing).",
+    )
+    user_data_dir: Optional[str] = Field(
+        "/Users/giorgiosensi/Library/Application Support/Google/Chrome",
+        description="Path to Chrome user data directory.",
+    )
+    profile_directory: Optional[str] = Field(
+        "Profile 6",
+        description="Specific Chrome profile directory name (default: 'Profile 6' for 2nd Giorgio profile).",
+    )
+    use_chrome_profile: bool = Field(
         True,
-        description="Run browser in headless mode.",
+        description="Enable real Chrome browser profile to preserve authenticated sessions and bypass Cloudflare.",
     )
 
     # Internal Model Testing Options
