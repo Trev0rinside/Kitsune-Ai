@@ -166,11 +166,20 @@ uv run uvicorn reverse_guardrail.api.app:app --host 127.0.0.1 --port 8888 --relo
 
 Open your browser at: **`http://localhost:8888/`**
 
+> [!TIP]
+> ### 💡 Best Practice for Web UI Chatbot Testing (Claude.ai, ChatGPT & Cloudflare Bypass)
+> When testing Web UI chatbots using your **Real Google Chrome Profile** (to preserve login sessions and bypass Cloudflare):
+> 1. Open the Kitsune Dashboard (`http://localhost:8888/`) in a **secondary browser** (e.g. **Firefox**, **Safari**, or **Arc**).
+> 2. Ensure **Google Chrome is closed** (`Cmd + Q` on macOS) so its profile directory is not locked by an active process.
+> 3. In the Kitsune Dashboard, select the **🌐 Browser-Use (Web UI)** tab, pick your Chrome profile (e.g. `Profile 6`), and click **🚀 Avvia Reverse-Guardrail Assessment**.
+> 4. Kitsune will launch your actual Google Chrome with your full authenticated session without any profile locking conflicts.
+
 ### Dashboard Features:
 1. **Target Selector**: Switch between 🧠 **Modello Interno (DeepSeek API)**, 🌐 **Browser-Use (Web UI)**, 🔌 **Endpoint HTTP/REST**, or 🧪 **Mock Simulator**.
-2. **Session Cookie Pre-Authentication**: Paste session cookies (JSON or `key=val` string) to test authenticated portals.
-3. **Live Metrics Bar**: Monitor real-time status, rounds, reconstruction confidence, and leaked fragment counts.
-4. **Interactive Tabs**:
+2. **Real Chrome Profile Support**: Select your local Chrome profile to test pre-authenticated sessions on Claude.ai, ChatGPT, or custom web portals with Cloudflare anti-bot stealth.
+3. **Session Cookie Pre-Authentication**: Optional manual cookie injection (JSON or header string) for headless testing.
+4. **Live Metrics Bar**: Monitor real-time status, rounds, reconstruction confidence, and leaked fragment counts.
+5. **Interactive Tabs**:
    - **📝 System Prompt Ricostruito**: Synthesized prompt with quick-copy button.
    - **📊 Sezioni & Gaps**: Section-by-section breakdown with confidence ratings.
    - **🔍 Frammenti Estratti**: Filterable table of leaked atomic tokens and strategies.

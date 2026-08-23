@@ -132,11 +132,24 @@ class BrowserGuardrailTarget(BaseGuardrailTarget):
         self._context: Optional[BrowserContext] = None
 
     async def initialize_browser(self) -> None:
-        """Launch persistent Chrome context or standalone Playwright browser."""
+        """Launch persistent Chrome context, connect via CDP, or fallback to standalone browser."""
         if self._context is not None:
             return
 
         self._playwright = await async_playwright().start()
+
+        # 1. Check if Chrome is already running with remote debugging (CDP port 9222)
+        try:
+            logger.info("[BrowserTarget] Checking for active Chrome instance on CDP (http://127.0.0.1:9222)...")
+            self._browser = await self._playwright.chromium.connect_over_cdp("http://127.0.0.1:9222")
+            if self._browser.contexts:
+                self._context = self._browser.contexts[0]
+            else:
+                self._context = await self._browser.new_context()
+            logger.info("[BrowserTarget] Successfully attached to existing active Chrome instance via CDP!")
+            return
+        except Exception:
+            logger.info("[BrowserTarget] No active CDP instance on port 9222. Proceeding with direct launch.")
 
         # Stealth & Anti-bot Chrome launch arguments
         chrome_args = [
@@ -155,10 +168,12 @@ class BrowserGuardrailTarget(BaseGuardrailTarget):
             target_profile_dir = self.user_data_dir
             lock_path = os.path.join(self.user_data_dir, "SingletonLock")
 
-            # Check if Chrome is actively running and locking the directory
             if os.path.exists(lock_path):
-                logger.info(
-                    f"[BrowserTarget] Active Chrome lock detected. Creating isolated profile clone for '{self.profile_directory}'..."
+                logger.warning(
+                    f"[BrowserTarget] Google Chrome is currently open and locking '{self.user_data_dir}'. "
+                    "To load your authenticated profile without conflicts, please either:\n"
+                    "  1. Quit Chrome (Cmd + Q) and re-run, OR\n"
+                    "  2. Start Chrome with remote debugging: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome --remote-debugging-port=9222'"
                 )
                 target_profile_dir = self._clone_profile_for_sandbox(
                     self.user_data_dir, self.profile_directory
@@ -179,16 +194,24 @@ class BrowserGuardrailTarget(BaseGuardrailTarget):
                 )
             except Exception as exc:
                 logger.warning(
-                    f"[BrowserTarget] Persistent Chrome launch failed ({exc}). Falling back to Chromium with anti-bot flags."
+                    f"[BrowserTarget] Persistent Chrome launch encountered: {exc}. Launching Chrome standalone profile."
                 )
                 self._context = None
 
         if self._context is None:
-            # Standalone Chromium instance
-            self._browser = await self._playwright.chromium.launch(
-                headless=self.headless,
-                args=chrome_args,
-            )
+            # Standalone Chrome / Chromium instance
+            try:
+                self._browser = await self._playwright.chromium.launch(
+                    channel="chrome",
+                    headless=self.headless,
+                    args=chrome_args,
+                )
+            except Exception:
+                self._browser = await self._playwright.chromium.launch(
+                    headless=self.headless,
+                    args=chrome_args,
+                )
+
             self._context = await self._browser.new_context(
                 viewport={"width": 1280, "height": 850},
                 user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
