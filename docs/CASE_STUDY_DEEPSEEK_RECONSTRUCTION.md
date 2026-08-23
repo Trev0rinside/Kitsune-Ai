@@ -240,6 +240,6 @@ Kitsune establishes that:
 ---
 
 ### 📚 References & Resources
-- **Official GitHub Repository:** [https://github.com/Trev0rinside/Kitsune](https://github.com/Trev0rinside/Kitsune)
+- **Official GitHub Repository:** [https://github.com/Trev0rinside/Kitsune-Ai](https://github.com/Trev0rinside/Kitsune-Ai)
 - **OWASP Top 10 for Large Language Models (2025/2026):** LLM01 (Prompt Injection), LLM06 (Sensitive Information Disclosure), LLM07 (System Prompt Leakage).
 - **Core Technologies:** FastAPI, LangGraph, Playwright, DeepSeek-v4-Flash, Google Gemini Embeddings.

@@ -134,8 +134,8 @@ flowchart LR
 
 ### 2. Clone & Install Dependencies
 ```bash
-git clone https://github.com/Trev0rinside/Kitsune.git
-cd Kitsune
+git clone https://github.com/Trev0rinside/Kitsune-Ai.git
+cd Kitsune-Ai
 
 # Install dependencies using uv
 uv sync
