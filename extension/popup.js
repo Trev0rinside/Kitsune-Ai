@@ -8,17 +8,17 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.runtime.sendMessage({ type: "GET_STATUS" }, (res) => {
       if (chrome.runtime.lastError || !res) {
         statusDot.className = 'status-dot';
-        statusText.innerText = 'Disconnesso';
-        targetTabUrl.innerText = 'Nessuna risposta';
+        statusText.innerText = 'Disconnected';
+        targetTabUrl.innerText = 'No response';
         return;
       }
 
       if (res.connected) {
         statusDot.className = 'status-dot online';
-        statusText.innerText = 'Connesso';
+        statusText.innerText = 'Connected';
       } else {
         statusDot.className = 'status-dot';
-        statusText.innerText = 'In attesa di Kitsune...';
+        statusText.innerText = 'Waiting for Engine...';
       }
 
       if (res.targetTab) {
@@ -27,10 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
           targetTabUrl.innerText = urlObj.hostname + (urlObj.pathname.length > 1 ? urlObj.pathname : '');
           targetTabUrl.title = res.targetTab.url;
         } catch (e) {
-          targetTabUrl.innerText = res.targetTab.title || 'Tab attivo';
+          targetTabUrl.innerText = res.targetTab.title || 'Active Tab';
         }
       } else {
-        targetTabUrl.innerText = 'Nessun tab Claude/ChatGPT';
+        targetTabUrl.innerText = 'No Claude/ChatGPT tab';
       }
     });
   }

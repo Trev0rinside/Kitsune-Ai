@@ -11,7 +11,7 @@
     <!-- Header -->
     <header class="header">
       <div class="brand">
-        <span class="logo-icon">🦊</span>
+        <img src="icons/icon-48.png" class="brand-logo" alt="Kitsune" width="32" height="32">
         <div class="title-group">
           <h1>KITSUNE</h1>
           <span class="subtitle">Guardrail Relay</span>
@@ -19,7 +19,7 @@
       </div>
       <div class="status-indicator" id="connectionPill">
         <span class="status-dot" id="statusDot"></span>
-        <span class="status-text" id="statusText">Verifica...</span>
+        <span class="status-text" id="statusText">Checking...</span>
       </div>
     </header>
 
@@ -30,25 +30,25 @@
         <span class="card-value" id="wsEndpoint">ws://127.0.0.1:8888</span>
       </div>
       <div class="card-row">
-        <span class="card-label">Target Rilevato:</span>
-        <span class="card-value target-badge" id="targetTabUrl">Nessun tab attivo</span>
+        <span class="card-label">Target Detected:</span>
+        <span class="card-value target-badge" id="targetTabUrl">No active tab</span>
       </div>
     </div>
 
     <!-- Quick Instructions -->
     <div class="info-box">
-      <div class="info-title">💡 Come Usarlo</div>
+      <div class="info-title">💡 How to Use</div>
       <ol class="info-list">
-        <li>Apri una chat su <strong>Claude.ai</strong> o <strong>ChatGPT</strong> in una scheda di Chrome.</li>
-        <li>Apri la Dashboard di Kitsune su <strong>http://localhost:8888</strong>.</li>
-        <li>Seleziona la modalità <strong>🦊 Chrome Extension Relay</strong> e avvia il test!</li>
+        <li>Open a chat on <strong>Claude.ai</strong> or <strong>ChatGPT</strong> in a Chrome tab.</li>
+        <li>Open Kitsune Dashboard at <strong>http://localhost:8888</strong>.</li>
+        <li>Select <strong>🦊 Chrome Extension Relay</strong> and start the assessment!</li>
       </ol>
     </div>
 
     <!-- Footer -->
     <footer class="footer">
       <span class="version">v1.0.0 — Zero-Cloudflare Relay</span>
-      <button class="btn-refresh" id="btnRefresh">🔄 Ricarica Stato</button>
+      <button class="btn-refresh" id="btnRefresh">🔄 Refresh Status</button>
     </footer>
   </div>
 

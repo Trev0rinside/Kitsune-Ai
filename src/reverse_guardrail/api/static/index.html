@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reverse-Guardrail 🛡️ | LLM Security Assessment Dashboard</title>
+  <title>Kitsune 🦊 | Reverse-Guardrail LLM Security Assessment Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/jpeg" href="/static/logo.jpg">
+  <link rel="icon" type="image/png" href="/static/kitsune_logo.png">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
@@ -19,17 +19,24 @@
   <header class="app-header">
     <div class="header-left">
       <div class="brand-badge">
-        <img src="/static/logo.jpg" alt="Kitsune Logo" class="brand-logo-img">
+        <img src="/static/kitsune_logo.png" alt="Kitsune Logo" class="brand-logo-img">
         <div class="brand-info">
           <h1>KITSUNE <span class="brand-sub">REVERSE-GUARDRAIL</span></h1>
-          <span class="subtitle">System Prompt Leakage & Soft-Injection Testing Engine</span>
+          <span class="subtitle" data-i18n="appSubtitle">System Prompt Leakage & Soft-Injection Testing Engine</span>
         </div>
       </div>
     </div>
     <div class="header-right">
+      <!-- Language Switcher -->
+      <div class="lang-switch-container">
+        <button type="button" class="lang-btn active" id="langEnBtn" data-lang="en">EN</button>
+        <span class="lang-divider">|</span>
+        <button type="button" class="lang-btn" id="langItBtn" data-lang="it">IT</button>
+      </div>
+
       <div class="api-status-pill" id="apiStatusPill">
         <span class="status-dot"></span>
-        <span id="apiStatusText">API Online</span>
+        <span id="apiStatusText" data-i18n="apiOnline">API Online</span>
       </div>
       <div class="model-badge">
         <span class="model-tag">LLM: DeepSeek-v4-Flash</span>
@@ -43,41 +50,41 @@
     <!-- Left Panel: Configuration & Target Setup -->
     <section class="panel config-panel">
       <div class="panel-header">
-        <h2>🎯 Configurazione Target & Scope</h2>
-        <span class="badge badge-scope" id="scopeGateBadge">Kill-Switch Armato</span>
+        <h2 data-i18n="targetConfigTitle">🎯 Target & Scope Configuration</h2>
+        <span class="badge badge-scope" id="scopeGateBadge" data-i18n="killswitchArmed">Kill-Switch Armed</span>
       </div>
 
       <!-- Scope Gate (Mandatory Kill-switch) -->
       <div class="scope-gate-box">
         <div class="scope-gate-title">
           <span class="alert-icon">⚠️</span>
-          <strong>Regole di Ingaggio & Scope Gate</strong>
+          <strong data-i18n="rulesOfEngagement">Rules of Engagement & Scope Gate</strong>
         </div>
-        <p class="scope-note">Il test si avvia esclusivamente previa autorizzazione scritta e identificativo di ingaggio.</p>
+        <p class="scope-note" data-i18n="scopeNote">Assessment executes strictly upon explicit authorization and verified tracking engagement ID.</p>
         
         <div class="form-group checkbox-group">
           <label class="custom-checkbox">
             <input type="checkbox" id="authCheckbox" checked>
             <span class="checkmark"></span>
-            <span class="checkbox-label"><strong>target.authorized: true</strong> (Autorizzazione formale confermata)</span>
+            <span class="checkbox-label"><strong data-i18n="targetAuthLabel">target.authorized: true</strong> (<span data-i18n="authConfirmed">Formal authorization confirmed</span>)</span>
           </label>
         </div>
 
         <div class="form-group">
-          <label for="engagementId">Engagement ID (Obbligatorio)</label>
-          <input type="text" id="engagementId" value="ENG-SEC-AUDIT-2026-001" placeholder="es. ENG-AUDIT-2026-001" required>
+          <label for="engagementId" data-i18n="engagementIdLabel">Engagement ID (Required)</label>
+          <input type="text" id="engagementId" value="ENG-SEC-AUDIT-2026-001" placeholder="e.g. ENG-AUDIT-2026-001" required>
         </div>
       </div>
 
       <!-- Target Mode Switcher -->
       <div class="form-section">
-        <label class="section-label">Modalità Target (SUT)</label>
+        <label class="section-label" data-i18n="targetModeLabel">Target System Mode (SUT)</label>
         <div class="mode-tabs">
-          <button type="button" class="mode-tab active" data-mode="extension">🦊 Chrome Extension Relay</button>
-          <button type="button" class="mode-tab" data-mode="internal">🧠 Modello Interno (DeepSeek API)</button>
-          <button type="button" class="mode-tab" data-mode="browser">🌐 Browser-Use (Playwright)</button>
-          <button type="button" class="mode-tab" data-mode="http">🔌 Endpoint HTTP/REST</button>
-          <button type="button" class="mode-tab" data-mode="mock">🧪 Mock Simulator</button>
+          <button type="button" class="mode-tab active" data-mode="extension" data-i18n="tabExtensionRelay">🦊 Chrome Extension Relay</button>
+          <button type="button" class="mode-tab" data-mode="internal" data-i18n="tabInternalLLM">🧠 Internal LLM (DeepSeek API)</button>
+          <button type="button" class="mode-tab" data-mode="browser" data-i18n="tabBrowserUse">🌐 Browser-Use (Playwright)</button>
+          <button type="button" class="mode-tab" data-mode="http" data-i18n="tabHttpEndpoint">🔌 HTTP/REST Endpoint</button>
+          <button type="button" class="mode-tab" data-mode="mock" data-i18n="tabMockSim">🧪 Mock Simulator</button>
         </div>
       </div>
 
@@ -87,24 +94,24 @@
           <div class="scope-gate-title" style="display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 0.4rem;">
               <span id="extensionStatusDot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.8);"></span>
-              <strong id="extensionStatusText">Stato Estensione: In attesa di connessione...</strong>
+              <strong id="extensionStatusText" data-i18n="extensionWaiting">Extension Status: Waiting for connection...</strong>
             </div>
-            <span class="badge" id="extensionTargetBadge" style="font-size:0.75rem; background: rgba(6, 182, 212, 0.2); color: #38bdf8;">Nessun tab</span>
+            <span class="badge" id="extensionTargetBadge" style="font-size:0.75rem; background: rgba(6, 182, 212, 0.2); color: #38bdf8;" data-i18n="noActiveTab">No active tab</span>
           </div>
-          <p class="scope-note" style="margin-bottom: 0;">
-            Le sonde verranno inviate <strong>direttamente all'interno della tua scheda attiva in Google Chrome</strong> (Claude.ai / ChatGPT), con la tua sessione autenticata e <strong>0% blocchi Cloudflare</strong>.
+          <p class="scope-note" style="margin-bottom: 0;" data-i18n="extensionDescription">
+            Probes are dispatched <strong>directly inside your active Google Chrome tab</strong> (Claude.ai / ChatGPT), utilizing your authenticated session with <strong>0% Cloudflare Turnstile blocks</strong>.
           </p>
         </div>
 
         <details class="advanced-details" open>
-          <summary>📦 Come caricare l'estensione in Chrome (30 secondi)</summary>
+          <summary data-i18n="howToLoadExtSummary">📦 How to load extension in Chrome (30 seconds)</summary>
           <div class="details-content">
             <ol style="padding-left: 1.2rem; font-size: 0.8rem; line-height: 1.6; color: #cbd5e1;">
-              <li>Apri Google Chrome e vai all'indirizzo <code>chrome://extensions</code></li>
-              <li>Attiva la levetta <strong>Modalità sviluppatore</strong> (in alto a destra).</li>
-              <li>Clicca su <strong>Carica estensione non pacchettizzata</strong> (Load unpacked).</li>
-              <li>Seleziona la cartella: <code>/Users/giorgiosensi/Desktop/Kitsune/extension</code></li>
-              <li>Apri <strong>https://claude.ai/new</strong> in una scheda di Chrome e clicca <em>Avvia Assessment</em> qui sotto!</li>
+              <li data-i18n="step1Ext">Open Google Chrome and navigate to <code>chrome://extensions</code></li>
+              <li data-i18n="step2Ext">Enable <strong>Developer mode</strong> toggle (top right corner).</li>
+              <li data-i18n="step3Ext">Click <strong>Load unpacked</strong> (Carica estensione non pacchettizzata).</li>
+              <li data-i18n="step4Ext">Select directory: <code>/Users/giorgiosensi/Desktop/Kitsune/extension</code></li>
+              <li data-i18n="step5Ext">Open <strong>https://claude.ai/new</strong> in a Chrome tab and click <em>Launch Assessment</em> below!</li>
             </ol>
           </div>
         </details>
@@ -113,27 +120,27 @@
       <!-- Internal LLM Mode Options (Direct API Testing) -->
       <div id="internalOptions" class="mode-options hidden">
         <div class="form-group">
-          <label for="internalModelSpec">Modello Sotto Test (LLM Target)</label>
+          <label for="internalModelSpec" data-i18n="internalModelLabel">Target Model (LLM Under Test)</label>
           <select id="internalModelSpec">
             <option value="deepseek-v4-flash" selected>DeepSeek-v4-Flash (Live API)</option>
             <option value="deepseek-chat">DeepSeek Chat</option>
-            <option value="ollama/llama3">Ollama / Llama3 (Locale)</option>
+            <option value="ollama/llama3">Ollama / Llama3 (Local)</option>
             <option value="mock">Mock Simulator</option>
           </select>
         </div>
         <div class="form-group">
           <div class="label-with-action">
-            <label for="internalSystemPrompt">System Prompt del Target (da Proteggere)</label>
-            <button type="button" class="btn-xs" id="btnLoadDefaultPrompt">Carica Ground-Truth NexusTech</button>
+            <label for="internalSystemPrompt" data-i18n="internalPromptLabel">Target System Prompt (To Protect)</label>
+            <button type="button" class="btn-xs" id="btnLoadDefaultPrompt" data-i18n="btnLoadNexusTech">Load NexusTech Ground-Truth</button>
           </div>
-          <textarea id="internalSystemPrompt" rows="6" placeholder="# NexusTech Enterprise Guardrail System Prompt&#10;&#10;Inserisci il System Prompt che il modello riceverà e che Kitsune cercherà di ricostruire ed analizzare..."></textarea>
+          <textarea id="internalSystemPrompt" rows="6" placeholder="# NexusTech Enterprise Guardrail System Prompt&#10;&#10;Insert the system prompt to protect, which Kitsune will probe, reconstruct, and assess..."></textarea>
         </div>
       </div>
 
       <!-- Target URL -->
       <div class="form-group hidden" id="urlGroup">
-        <label for="targetUrl">URL / Endpoint del Guardrail Target</label>
-        <input type="url" id="targetUrl" value="https://chat.target.internal" placeholder="https://chat.target.internal o http://localhost:8000/api/chat">
+        <label for="targetUrl" data-i18n="targetUrlLabel">Target Guardrail URL / Endpoint</label>
+        <input type="url" id="targetUrl" value="https://claude.ai/new" placeholder="https://claude.ai/new or http://localhost:8000/api/chat">
       </div>
 
       <!-- Browser Mode Options (Chrome Profile, Cloudflare Bypass & Selectors) -->
@@ -141,19 +148,19 @@
         <!-- Chrome Profile Mode (Anti-Cloudflare) -->
         <div class="form-group">
           <div class="label-with-action">
-            <label><strong>👤 Profilo Browser Chrome (Anti-Cloudflare & Sessione Reale)</strong></label>
-            <span class="badge badge-scope" style="font-size:0.7rem; background: rgba(16, 185, 129, 0.2); color: #10b981;">Attivo</span>
+            <label><strong data-i18n="chromeProfileTitle">👤 Chrome Browser Profile (Real Session)</strong></label>
+            <span class="badge badge-scope" style="font-size:0.7rem; background: rgba(16, 185, 129, 0.2); color: #10b981;" data-i18n="activeBadge">Active</span>
           </div>
           <div class="form-row">
             <div class="form-group checkbox-align">
               <label class="custom-checkbox">
                 <input type="checkbox" id="useChromeProfileCheckbox" checked>
                 <span class="checkmark"></span>
-                <span class="checkbox-label">Usa Profilo Chrome Reale</span>
+                <span class="checkbox-label" data-i18n="useChromeProfileLabel">Use Real Chrome Profile</span>
               </label>
             </div>
             <div class="form-group">
-              <label for="chromeProfileSelect">Profilo Selezionato</label>
+              <label for="chromeProfileSelect" data-i18n="selectedProfileLabel">Selected Profile</label>
               <select id="chromeProfileSelect">
                 <option value="Profile 6" selected>Profile 6 (Giorgio - giorgio.sensi2002@gmail.com)</option>
                 <option value="Profile 1">Profile 1 (Giorgio - trevorinside.inside@gmail.com)</option>
@@ -165,30 +172,30 @@
             </div>
           </div>
           <div class="form-group" style="margin-top:0.5rem;">
-            <label for="userDataDirInput">Directory Dati Utente Chrome (macOS)</label>
+            <label for="userDataDirInput" data-i18n="chromeDataDirLabel">Chrome User Data Directory (macOS)</label>
             <input type="text" id="userDataDirInput" value="/Users/giorgiosensi/Library/Application Support/Google/Chrome">
           </div>
 
           <div class="scope-gate-box" style="margin-top: 0.75rem; border-color: rgba(6, 182, 212, 0.4); background: rgba(6, 182, 212, 0.05);">
             <div class="scope-gate-title" style="color: #38bdf8;">
               <span class="alert-icon">💡</span>
-              <strong>Consiglio: Dashboard su Firefox/Safari & Chrome Chiuso</strong>
+              <strong data-i18n="tipBrowserUseTitle">Tip: Open Dashboard in Firefox/Safari & Close Chrome</strong>
             </div>
-            <p class="scope-note" style="margin-bottom: 0;">
-              Apri questa dashboard su un <strong>secondo browser (es. Firefox o Safari)</strong> e <strong>chiudi Google Chrome (Cmd + Q)</strong> prima di avviare. Kitsune potrà così avviare il tuo vero Chrome con <code>Profile 6</code> e il login di Claude attivo senza blocchi di istanza.
+            <p class="scope-note" style="margin-bottom: 0;" data-i18n="tipBrowserUseDesc">
+              Open this dashboard in a <strong>secondary browser (e.g. Firefox or Safari)</strong> and <strong>close Google Chrome (Cmd + Q)</strong> before starting. Kitsune will launch your real Chrome with <code>Profile 6</code> and your authenticated Claude session without singleton lock conflicts.
             </p>
           </div>
         </div>
 
         <details class="advanced-details">
-          <summary>🍪 Cookie Manuali & Opzioni Avanzate Browser</summary>
+          <summary data-i18n="advancedBrowserOptionsSummary">🍪 Manual Cookies & Advanced Browser Options</summary>
           <div class="details-content">
             <div class="form-group">
               <div class="label-with-action">
-                <label for="cookiesInput">Cookie di Sessione Aggiuntivi (Opzionali)</label>
+                <label for="cookiesInput" data-i18n="extraCookiesLabel">Additional Session Cookies (Optional)</label>
                 <div class="quick-links">
-                  <button type="button" class="btn-xs" id="btnExampleCookieJson">Esempio JSON</button>
-                  <button type="button" class="btn-xs" id="btnExampleCookieHeader">Esempio Header</button>
+                  <button type="button" class="btn-xs" id="btnExampleCookieJson" data-i18n="btnExampleJson">JSON Example</button>
+                  <button type="button" class="btn-xs" id="btnExampleCookieHeader" data-i18n="btnExampleHeader">Header Example</button>
                 </div>
               </div>
               <textarea id="cookiesInput" rows="3" placeholder='[{"name": "session_id", "value": "tok_9912", "domain": "claude.ai"}]'></textarea>
@@ -196,24 +203,24 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label for="inputSelector">Input Selector (Auto-detect per Claude/ChatGPT)</label>
-                <input type="text" id="inputSelector" placeholder="div[contenteditable='true'], textarea (auto-detect se vuoto)">
+                <label for="inputSelector" data-i18n="inputSelectorLabel">Input Selector (Auto-detect for Claude/ChatGPT)</label>
+                <input type="text" id="inputSelector" placeholder="div[contenteditable='true'], textarea (auto-detect if empty)">
               </div>
               <div class="form-group">
-                <label for="submitSelector">Submit Selector</label>
+                <label for="submitSelector" data-i18n="submitSelectorLabel">Submit Selector</label>
                 <input type="text" id="submitSelector" placeholder="button[aria-label*='Send'], Enter">
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label for="responseSelector">Assistant Response Selector</label>
-                <input type="text" id="responseSelector" placeholder=".font-claude-message, .assistant (auto-detect se vuoto)">
+                <label for="responseSelector" data-i18n="responseSelectorLabel">Assistant Response Selector</label>
+                <input type="text" id="responseSelector" placeholder=".font-claude-message, .assistant (auto-detect if empty)">
               </div>
               <div class="form-group checkbox-align">
                 <label class="custom-checkbox">
                   <input type="checkbox" id="headlessCheckbox">
                   <span class="checkmark"></span>
-                  <span class="checkbox-label">Modalità Headless (Disattiva per Cloudflare)</span>
+                  <span class="checkbox-label" data-i18n="headlessLabel">Headless Mode (Disable for Cloudflare)</span>
                 </label>
               </div>
             </div>
@@ -225,11 +232,11 @@
       <div id="httpOptions" class="mode-options hidden">
         <div class="form-row">
           <div class="form-group">
-            <label for="httpApiToken">API Token / Bearer Key (Opzionale)</label>
+            <label for="httpApiToken" data-i18n="apiTokenLabel">API Token / Bearer Key (Optional)</label>
             <input type="password" id="httpApiToken" placeholder="sk-xxxx / eyJhbGciOi...">
           </div>
           <div class="form-group">
-            <label for="httpAuthHeader">Custom Header Completo (Opzionale)</label>
+            <label for="httpAuthHeader" data-i18n="customAuthHeaderLabel">Full Custom Auth Header (Optional)</label>
             <input type="text" id="httpAuthHeader" placeholder="X-API-Key: secret_token_123">
           </div>
         </div>
@@ -237,18 +244,18 @@
 
       <!-- Probing Parameters -->
       <div class="form-section">
-        <label class="section-label">Parametri di Probing & Closed Loop</label>
+        <label class="section-label" data-i18n="probingParamsLabel">Probing & Closed-Loop Parameters</label>
         <div class="form-row three-cols">
           <div class="form-group">
-            <label for="maxRounds">Max Rounds</label>
+            <label for="maxRounds" data-i18n="maxRoundsLabel">Max Rounds</label>
             <input type="number" id="maxRounds" value="4" min="1" max="20">
           </div>
           <div class="form-group">
-            <label for="attemptsPerRound">Sonde / Round</label>
+            <label for="attemptsPerRound" data-i18n="attemptsPerRoundLabel">Probes / Round</label>
             <input type="number" id="attemptsPerRound" value="4" min="1" max="15">
           </div>
           <div class="form-group">
-            <label for="confThreshold">Soglia Confidenza</label>
+            <label for="confThreshold" data-i18n="confThresholdLabel">Confidence Target</label>
             <input type="number" id="confThreshold" value="0.85" min="0.1" max="1.0" step="0.05">
           </div>
         </div>
@@ -257,7 +264,7 @@
       <!-- Launch Action -->
       <button type="button" class="btn btn-primary btn-launch" id="btnLaunch">
         <span class="btn-icon">🚀</span>
-        <span id="btnLaunchText">Avvia Reverse-Guardrail Assessment</span>
+        <span id="btnLaunchText" data-i18n="btnLaunchAssessment">Launch Reverse-Guardrail Assessment</span>
       </button>
     </section>
 
@@ -266,15 +273,15 @@
       <!-- Live Metrics Bar -->
       <div class="metrics-bar">
         <div class="metric-card">
-          <span class="metric-title">Stato Pipeline</span>
+          <span class="metric-title" data-i18n="metricPipelineStatus">Pipeline Status</span>
           <span class="metric-value status-idle" id="metricStatus">IDLE</span>
         </div>
         <div class="metric-card">
-          <span class="metric-title">Round Corrente</span>
+          <span class="metric-title" data-i18n="metricCurrentRound">Current Round</span>
           <span class="metric-value" id="metricRound">0 / 0</span>
         </div>
         <div class="metric-card">
-          <span class="metric-title">Confidenza Ricostruzione</span>
+          <span class="metric-title" data-i18n="metricReconConfidence">Reconstruction Confidence</span>
           <div class="metric-conf-wrapper">
             <span class="metric-value highlight" id="metricConfidence">0.0%</span>
             <div class="progress-bar-container">
@@ -283,43 +290,43 @@
           </div>
         </div>
         <div class="metric-card">
-          <span class="metric-title">Frammenti Leakati</span>
+          <span class="metric-title" data-i18n="metricLeakedFragments">Leaked Fragments</span>
           <span class="metric-value" id="metricFragments">0</span>
         </div>
       </div>
 
       <!-- Results Navigation Tabs -->
       <div class="results-tabs">
-        <button type="button" class="tab-btn active" data-tab="promptTab">📝 System Prompt Ricostruito</button>
-        <button type="button" class="tab-btn" data-tab="sectionsTab">📊 Sezioni & Gaps</button>
-        <button type="button" class="tab-btn" data-tab="fragmentsTab">🔍 Frammenti Estratti</button>
-        <button type="button" class="tab-btn" data-tab="vulnTab">🔓 Vulnerability Assessment</button>
-        <button type="button" class="tab-btn" data-tab="hardeningTab">🛡️ Hardening & Remediation</button>
-        <button type="button" class="tab-btn" data-tab="logsTab">📜 Console & Audit Trail</button>
+        <button type="button" class="tab-btn active" data-tab="promptTab" data-i18n="tabReconstructedPrompt">📝 Reconstructed System Prompt</button>
+        <button type="button" class="tab-btn" data-tab="sectionsTab" data-i18n="tabSectionsGaps">📊 Sections & Gaps</button>
+        <button type="button" class="tab-btn" data-tab="fragmentsTab" data-i18n="tabExtractedFragments">🔍 Extracted Fragments</button>
+        <button type="button" class="tab-btn" data-tab="vulnTab" data-i18n="tabVulnAssessment">🔓 Vulnerability Assessment</button>
+        <button type="button" class="tab-btn" data-tab="hardeningTab" data-i18n="tabHardeningRemediation">🛡️ Hardening & Remediation</button>
+        <button type="button" class="tab-btn" data-tab="logsTab" data-i18n="tabAuditLogs">📜 Console & Audit Trail</button>
       </div>
 
       <!-- Tab 1: Reconstructed System Prompt -->
       <div class="tab-content active" id="promptTab">
         <div class="prompt-viewer-header">
-          <span class="viewer-title">Synthesized Best-Effort SYSTEM PROMPT</span>
-          <button type="button" class="btn btn-sm btn-secondary" id="btnCopyPrompt">📋 Copia Prompt</button>
+          <span class="viewer-title" data-i18n="synthesizedPromptTitle">Synthesized Best-Effort SYSTEM PROMPT</span>
+          <button type="button" class="btn btn-sm btn-secondary" id="btnCopyPrompt" data-i18n="btnCopyPrompt">📋 Copy Prompt</button>
         </div>
         <div class="prompt-code-box">
-          <pre><code id="reconstructedPromptContent">In attesa dell'avvio della pipeline...
+          <pre><code id="reconstructedPromptContent" data-i18n="waitingPromptContent">Waiting for pipeline execution...
 
-Il prompt ricostruito dai 4 agenti (Tester -> Guardrail -> Inspectioner -> DB -> Reverse Prompt Engineer) apparirà qui al completamento di ogni round.</code></pre>
+The prompt synthesized by the 4 agents (Tester -> Guardrail -> Inspectioner -> Vector Store -> Reverse Prompt Engineer) will appear here upon completion of each round.</code></pre>
         </div>
       </div>
 
       <!-- Tab 2: Covered Sections & Residual Gaps -->
       <div class="tab-content" id="sectionsTab">
         <div class="sections-grid" id="sectionsContainer">
-          <div class="empty-state">Nessuna sezione analizzata ancora.</div>
+          <div class="empty-state" data-i18n="emptySections">No sections analyzed yet.</div>
         </div>
         <div class="gaps-box">
-          <h3>🎯 Gaps Residui (Target del prossimo round)</h3>
+          <h3 data-i18n="residualGapsTitle">🎯 Residual Gaps (Target for Next Round)</h3>
           <ul id="gapsList" class="gaps-list">
-            <li>In attesa di esecuzione...</li>
+            <li data-i18n="waitingExecution">Waiting for execution...</li>
           </ul>
         </div>
       </div>
@@ -327,9 +334,9 @@ Il prompt ricostruito dai 4 agenti (Tester -> Guardrail -> Inspectioner -> DB ->
       <!-- Tab 3: Extracted Fragments Explorer -->
       <div class="tab-content" id="fragmentsTab">
         <div class="fragments-filter-bar">
-          <span>Filtra per Categoria:</span>
+          <span data-i18n="filterByCategory">Filter by Category:</span>
           <select id="fragCategoryFilter">
-            <option value="ALL">Tutte le Categorie</option>
+            <option value="ALL" data-i18n="allCategories">All Categories</option>
             <option value="role_persona">Role & Persona</option>
             <option value="instruction">Instruction</option>
             <option value="constraint_negative_rule">Negative Constraints</option>
@@ -343,16 +350,16 @@ Il prompt ricostruito dai 4 agenti (Tester -> Guardrail -> Inspectioner -> DB ->
           <table class="data-table" id="fragmentsTable">
             <thead>
               <tr>
-                <th>Round</th>
-                <th>Categoria</th>
-                <th>Testo Frammento Leakato</th>
-                <th>Confidenza</th>
-                <th>Strategia Sorgente</th>
+                <th data-i18n="colRound">Round</th>
+                <th data-i18n="colCategory">Category</th>
+                <th data-i18n="colFragmentText">Leaked Fragment Text</th>
+                <th data-i18n="colConfidence">Confidence</th>
+                <th data-i18n="colSourceStrategy">Source Strategy</th>
               </tr>
             </thead>
             <tbody id="fragmentsTableBody">
               <tr>
-                <td colspan="5" class="text-center">Nessun frammento registrato.</td>
+                <td colspan="5" class="text-center" data-i18n="noFragmentsRecorded">No fragments recorded yet.</td>
               </tr>
             </tbody>
           </table>
@@ -363,25 +370,25 @@ Il prompt ricostruito dai 4 agenti (Tester -> Guardrail -> Inspectioner -> DB ->
       <div class="tab-content" id="vulnTab">
         <div class="vuln-metrics-row">
           <div class="vuln-metric-pill">
-            <span class="vuln-metric-label">Delimiter Isolation</span>
+            <span class="vuln-metric-label" data-i18n="metricDelimiterIso">Delimiter Isolation</span>
             <span class="vuln-metric-val" id="vulnScoreDelimiter">--</span>
           </div>
           <div class="vuln-metric-pill">
-            <span class="vuln-metric-label">Directive Ambiguity</span>
+            <span class="vuln-metric-label" data-i18n="metricDirectiveAmbiguity">Directive Ambiguity</span>
             <span class="vuln-metric-val" id="vulnScoreAmbiguity">--</span>
           </div>
           <div class="vuln-metric-pill">
-            <span class="vuln-metric-label">Secret Exposure Risk</span>
+            <span class="vuln-metric-label" data-i18n="metricSecretRisk">Secret Exposure Risk</span>
             <span class="vuln-metric-val" id="vulnScoreSecret">--</span>
           </div>
           <div class="vuln-metric-pill">
-            <span class="vuln-metric-label">Overall Risk Rating</span>
+            <span class="vuln-metric-label" data-i18n="metricOverallRisk">Overall Risk Rating</span>
             <span class="sev-badge sev-info" id="vulnScoreOverall">IDLE</span>
           </div>
         </div>
 
         <div class="vuln-list-container" id="vulnListContainer">
-          <div class="empty-state">L'analisi delle vulnerabilità si attiverà al termine della ricostruzione del System Prompt.</div>
+          <div class="empty-state" data-i18n="emptyVulns">Vulnerability assessment will activate once the System Prompt reconstruction completes.</div>
         </div>
       </div>
 
@@ -390,40 +397,40 @@ Il prompt ricostruito dai 4 agenti (Tester -> Guardrail -> Inspectioner -> DB ->
         <!-- Score Delta Header -->
         <div class="hardening-score-header">
           <div class="score-delta-box">
-            <span class="score-delta-label">Robustezza Strutturale Prima / Dopo:</span>
+            <span class="score-delta-label" data-i18n="structuralRobustnessDelta">Structural Robustness Before / After:</span>
             <div class="score-delta-values">
               <span class="score-before" id="scoreBeforeHardening">--</span>
               <span class="score-arrow">➔</span>
               <span class="score-after" id="scoreAfterHardening">--</span>
             </div>
           </div>
-          <button type="button" class="btn btn-sm btn-secondary" id="btnCopyHardenedPrompt">📋 Copia Prompt Hardened</button>
+          <button type="button" class="btn btn-sm btn-secondary" id="btnCopyHardenedPrompt" data-i18n="btnCopyHardenedPrompt">📋 Copy Hardened Prompt</button>
         </div>
 
         <!-- Executive Summary -->
         <div class="executive-summary-card">
-          <div class="summary-card-title">📋 Executive Summary & Security Posture</div>
-          <p id="hardeningExecSummary">In attesa dell'elaborazione del report difensivo...</p>
+          <div class="summary-card-title" data-i18n="execSummaryTitle">📋 Executive Summary & Security Posture</div>
+          <p id="hardeningExecSummary" data-i18n="waitingDefensiveReport">Waiting for defensive report generation...</p>
         </div>
 
         <!-- Section Remediations (Before/After) -->
         <div class="remediations-container" id="remediationsContainer">
-          <div class="empty-state">Nessuna remediation disponibile finché la pipeline non è completata.</div>
+          <div class="empty-state" data-i18n="emptyRemediations">No remediations available until pipeline execution completes.</div>
         </div>
 
         <!-- Full Hardened Prompt Viewer -->
         <div class="prompt-viewer-header" style="margin-top: 24px;">
-          <span class="viewer-title">🛡️ Complete Hardened Production System Prompt</span>
+          <span class="viewer-title" data-i18n="hardenedPromptTitle">🛡️ Complete Hardened Production System Prompt</span>
         </div>
         <div class="prompt-code-box">
-          <pre><code id="hardenedPromptContent">Il prompt hardened e strutturato con isolamento XML e regole di precedenza apparirà qui.</code></pre>
+          <pre><code id="hardenedPromptContent" data-i18n="waitingHardenedContent">The hardened and structured prompt with XML isolation and precedence rules will appear here.</code></pre>
         </div>
 
         <!-- Architectural Defense Patterns -->
         <div class="arch-recs-box" style="margin-top: 20px;">
-          <h3>🏗️ Raccomandazioni Architetturali Difensive (Defense-in-Depth)</h3>
+          <h3 data-i18n="archRecsTitle">🏗️ Defensive Architectural Recommendations (Defense-in-Depth)</h3>
           <ul id="archRecsList" class="gaps-list">
-            <li>In attesa di esecuzione...</li>
+            <li data-i18n="waitingExecution">Waiting for execution...</li>
           </ul>
         </div>
       </div>
@@ -431,8 +438,8 @@ Il prompt ricostruito dai 4 agenti (Tester -> Guardrail -> Inspectioner -> DB ->
       <!-- Tab 6: Console & Audit Logs -->
       <div class="tab-content" id="logsTab">
         <div class="log-console" id="logConsole">
-          <div class="log-line info">[System] Reverse-Guardrail Frontend Dashboard inizializzato.</div>
-          <div class="log-line info">[Security] Scope Authorization Kill-Switch attivo.</div>
+          <div class="log-line info" data-i18n="logInitialized">[System] Reverse-Guardrail Frontend Dashboard initialized.</div>
+          <div class="log-line info" data-i18n="logScopeActive">[Security] Scope Authorization Kill-Switch armed and active.</div>
         </div>
       </div>
     </section>

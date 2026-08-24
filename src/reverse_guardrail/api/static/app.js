@@ -1,9 +1,202 @@
 /**
- * Reverse-Guardrail — Interactive Front-End Controller
- * Supports Phase 1 (Reconstruction) & Phase 2 (Vulnerability Assessment & Hardening Report)
+ * Kitsune Reverse-Guardrail — Interactive Front-End Controller
+ * Supports Phase 1 (Reconstruction), Phase 2 (Vulnerability Assessment & Hardening), and i18n (EN/IT).
  */
 
+const I18N = {
+  en: {
+    appSubtitle: "System Prompt Leakage & Soft-Injection Testing Engine",
+    apiOnline: "API Online",
+    apiOffline: "API Offline",
+    targetConfigTitle: "🎯 Target & Scope Configuration",
+    killswitchArmed: "Kill-Switch Armed",
+    rulesOfEngagement: "Rules of Engagement & Scope Gate",
+    scopeNote: "Assessment executes strictly upon explicit authorization and verified tracking engagement ID.",
+    targetAuthLabel: "target.authorized: true",
+    authConfirmed: "Formal authorization confirmed",
+    engagementIdLabel: "Engagement ID (Required)",
+    targetModeLabel: "Target System Mode (SUT)",
+    tabExtensionRelay: "🦊 Chrome Extension Relay",
+    tabInternalLLM: "🧠 Internal LLM (DeepSeek API)",
+    tabBrowserUse: "🌐 Browser-Use (Playwright)",
+    tabHttpEndpoint: "🔌 HTTP/REST Endpoint",
+    tabMockSim: "🧪 Mock Simulator",
+    extensionWaiting: "Extension Status: Waiting for connection...",
+    extensionReady: "Extension Status: Connected (Ready)",
+    noActiveTab: "No active tab",
+    extensionDescription: "Probes are dispatched directly inside your active Google Chrome tab (Claude.ai / ChatGPT), utilizing your authenticated session with 0% Cloudflare Turnstile blocks.",
+    howToLoadExtSummary: "📦 How to load extension in Chrome (30 seconds)",
+    step1Ext: "Open Google Chrome and navigate to chrome://extensions",
+    step2Ext: "Enable Developer mode toggle (top right corner).",
+    step3Ext: "Click Load unpacked (Carica estensione non pacchettizzata).",
+    step4Ext: "Select directory: /Users/giorgiosensi/Desktop/Kitsune/extension",
+    step5Ext: "Open https://claude.ai/new in a Chrome tab and click Launch Assessment below!",
+    internalModelLabel: "Target Model (LLM Under Test)",
+    internalPromptLabel: "Target System Prompt (To Protect)",
+    btnLoadNexusTech: "Load NexusTech Ground-Truth",
+    targetUrlLabel: "Target Guardrail URL / Endpoint",
+    chromeProfileTitle: "👤 Chrome Browser Profile (Real Session)",
+    activeBadge: "Active",
+    useChromeProfileLabel: "Use Real Chrome Profile",
+    selectedProfileLabel: "Selected Profile",
+    chromeDataDirLabel: "Chrome User Data Directory (macOS)",
+    tipBrowserUseTitle: "Tip: Open Dashboard in Firefox/Safari & Close Chrome",
+    tipBrowserUseDesc: "Open this dashboard in a secondary browser (e.g. Firefox or Safari) and close Google Chrome (Cmd + Q) before starting. Kitsune will launch your real Chrome with Profile 6 and your authenticated Claude session without singleton lock conflicts.",
+    advancedBrowserOptionsSummary: "🍪 Manual Cookies & Advanced Browser Options",
+    extraCookiesLabel: "Additional Session Cookies (Optional)",
+    btnExampleJson: "JSON Example",
+    btnExampleHeader: "Header Example",
+    inputSelectorLabel: "Input Selector (Auto-detect for Claude/ChatGPT)",
+    submitSelectorLabel: "Submit Selector",
+    responseSelectorLabel: "Assistant Response Selector",
+    headlessLabel: "Headless Mode (Disable for Cloudflare)",
+    apiTokenLabel: "API Token / Bearer Key (Optional)",
+    customAuthHeaderLabel: "Full Custom Auth Header (Optional)",
+    probingParamsLabel: "Probing & Closed-Loop Parameters",
+    maxRoundsLabel: "Max Rounds",
+    attemptsPerRoundLabel: "Probes / Round",
+    confThresholdLabel: "Confidence Target",
+    btnLaunchAssessment: "Launch Reverse-Guardrail Assessment",
+    btnRunningAssessment: "Assessment in Progress...",
+    metricPipelineStatus: "Pipeline Status",
+    metricCurrentRound: "Current Round",
+    metricReconConfidence: "Reconstruction Confidence",
+    metricLeakedFragments: "Leaked Fragments",
+    tabReconstructedPrompt: "📝 Reconstructed System Prompt",
+    tabSectionsGaps: "📊 Sections & Gaps",
+    tabExtractedFragments: "🔍 Extracted Fragments",
+    tabVulnAssessment: "🔓 Vulnerability Assessment",
+    tabHardeningRemediation: "🛡️ Hardening & Remediation",
+    tabAuditLogs: "📜 Console & Audit Trail",
+    synthesizedPromptTitle: "Synthesized Best-Effort SYSTEM PROMPT",
+    btnCopyPrompt: "📋 Copy Prompt",
+    waitingPromptContent: "Waiting for pipeline execution...\n\nThe prompt synthesized by the 4 agents (Tester -> Guardrail -> Inspectioner -> Vector Store -> Reverse Prompt Engineer) will appear here upon completion of each round.",
+    emptySections: "No sections analyzed yet.",
+    residualGapsTitle: "🎯 Residual Gaps (Target for Next Round)",
+    waitingExecution: "Waiting for execution...",
+    filterByCategory: "Filter by Category:",
+    allCategories: "All Categories",
+    colRound: "Round",
+    colCategory: "Category",
+    colFragmentText: "Leaked Fragment Text",
+    colConfidence: "Confidence",
+    colSourceStrategy: "Source Strategy",
+    noFragmentsRecorded: "No fragments recorded yet.",
+    metricDelimiterIso: "Delimiter Isolation",
+    metricDirectiveAmbiguity: "Directive Ambiguity",
+    metricSecretRisk: "Secret Exposure Risk",
+    metricOverallRisk: "Overall Risk Rating",
+    emptyVulns: "Vulnerability assessment will activate once the System Prompt reconstruction completes.",
+    structuralRobustnessDelta: "Structural Robustness Before / After:",
+    btnCopyHardenedPrompt: "📋 Copy Hardened Prompt",
+    execSummaryTitle: "📋 Executive Summary & Security Posture",
+    waitingDefensiveReport: "Waiting for defensive report generation...",
+    emptyRemediations: "No remediations available until pipeline execution completes.",
+    hardenedPromptTitle: "🛡️ Complete Hardened Production System Prompt",
+    waitingHardenedContent: "The hardened and structured prompt with XML isolation and precedence rules will appear here.",
+    archRecsTitle: "🏗️ Defensive Architectural Recommendations (Defense-in-Depth)",
+    logInitialized: "[System] Reverse-Guardrail Frontend Dashboard initialized.",
+    logScopeActive: "[Security] Scope Authorization Kill-Switch armed and active."
+  },
+  it: {
+    appSubtitle: "Engine di Test e Ricostruzione Leakage del System Prompt",
+    apiOnline: "API Online",
+    apiOffline: "API Offline",
+    targetConfigTitle: "🎯 Configurazione Target & Scope",
+    killswitchArmed: "Kill-Switch Armato",
+    rulesOfEngagement: "Regole di Ingaggio & Scope Gate",
+    scopeNote: "Il test si avvia esclusivamente previa autorizzazione scritta e identificativo di ingaggio.",
+    targetAuthLabel: "target.authorized: true",
+    authConfirmed: "Autorizzazione formale confermata",
+    engagementIdLabel: "Engagement ID (Obbligatorio)",
+    targetModeLabel: "Modalità Target (SUT)",
+    tabExtensionRelay: "🦊 Chrome Extension Relay",
+    tabInternalLLM: "🧠 Modello Interno (DeepSeek API)",
+    tabBrowserUse: "🌐 Browser-Use (Playwright)",
+    tabHttpEndpoint: "🔌 Endpoint HTTP/REST",
+    tabMockSim: "🧪 Mock Simulator",
+    extensionWaiting: "Stato Estensione: In attesa di connessione...",
+    extensionReady: "Stato Estensione: Connessa (Pronta)",
+    noActiveTab: "Nessun tab attivo",
+    extensionDescription: "Le sonde verranno inviate direttamente all'interno della tua scheda attiva in Google Chrome (Claude.ai / ChatGPT), con la tua sessione autenticata e 0% blocchi Cloudflare.",
+    howToLoadExtSummary: "📦 Come caricare l'estensione in Chrome (30 secondi)",
+    step1Ext: "Apri Google Chrome e vai all'indirizzo chrome://extensions",
+    step2Ext: "Attiva la levetta Modalità sviluppatore (in alto a destra).",
+    step3Ext: "Clicca su Carica estensione non pacchettizzata (Load unpacked).",
+    step4Ext: "Seleziona la cartella: /Users/giorgiosensi/Desktop/Kitsune/extension",
+    step5Ext: "Apri https://claude.ai/new in una scheda di Chrome e clicca Avvia Assessment qui sotto!",
+    internalModelLabel: "Modello Sotto Test (LLM Target)",
+    internalPromptLabel: "System Prompt del Target (da Proteggere)",
+    btnLoadNexusTech: "Carica Ground-Truth NexusTech",
+    targetUrlLabel: "URL / Endpoint del Guardrail Target",
+    chromeProfileTitle: "👤 Profilo Browser Chrome (Sessione Reale)",
+    activeBadge: "Attivo",
+    useChromeProfileLabel: "Usa Profilo Chrome Reale",
+    selectedProfileLabel: "Profilo Selezionato",
+    chromeDataDirLabel: "Directory Dati Utente Chrome (macOS)",
+    tipBrowserUseTitle: "Consiglio: Dashboard su Firefox/Safari & Chrome Chiuso",
+    tipBrowserUseDesc: "Apri questa dashboard su un secondo browser (es. Firefox o Safari) e chiudi Google Chrome (Cmd + Q) prima di avviare. Kitsune potrà così avviare il tuo vero Chrome con Profile 6 e il login di Claude attivo senza blocchi di istanza.",
+    advancedBrowserOptionsSummary: "🍪 Cookie Manuali & Opzioni Avanzate Browser",
+    extraCookiesLabel: "Cookie di Sessione Aggiuntivi (Opzionali)",
+    btnExampleJson: "Esempio JSON",
+    btnExampleHeader: "Esempio Header",
+    inputSelectorLabel: "Input Selector (Auto-detect per Claude/ChatGPT)",
+    submitSelectorLabel: "Submit Selector",
+    responseSelectorLabel: "Assistant Response Selector",
+    headlessLabel: "Modalità Headless (Disattiva per Cloudflare)",
+    apiTokenLabel: "API Token / Bearer Key (Opzionale)",
+    customAuthHeaderLabel: "Custom Header Completo (Opzionale)",
+    probingParamsLabel: "Parametri di Probing & Closed Loop",
+    maxRoundsLabel: "Max Rounds",
+    attemptsPerRoundLabel: "Sonde / Round",
+    confThresholdLabel: "Soglia Confidenza",
+    btnLaunchAssessment: "Avvia Reverse-Guardrail Assessment",
+    btnRunningAssessment: "Assessment in Corso...",
+    metricPipelineStatus: "Stato Pipeline",
+    metricCurrentRound: "Round Corrente",
+    metricReconConfidence: "Confidenza Ricostruzione",
+    metricLeakedFragments: "Frammenti Leakati",
+    tabReconstructedPrompt: "📝 System Prompt Ricostruito",
+    tabSectionsGaps: "📊 Sezioni & Gaps",
+    tabExtractedFragments: "🔍 Frammenti Estratti",
+    tabVulnAssessment: "🔓 Vulnerability Assessment",
+    tabHardeningRemediation: "🛡️ Hardening & Remediation",
+    tabAuditLogs: "📜 Console & Audit Trail",
+    synthesizedPromptTitle: "Synthesized Best-Effort SYSTEM PROMPT",
+    btnCopyPrompt: "📋 Copia Prompt",
+    waitingPromptContent: "In attesa dell'avvio della pipeline...\n\nIl prompt ricostruito dai 4 agenti (Tester -> Guardrail -> Inspectioner -> DB -> Reverse Prompt Engineer) apparirà qui al completamento di ogni round.",
+    emptySections: "Nessuna sezione analizzata ancora.",
+    residualGapsTitle: "🎯 Gaps Residui (Target del prossimo round)",
+    waitingExecution: "In attesa di esecuzione...",
+    filterByCategory: "Filtra per Categoria:",
+    allCategories: "Tutte le Categorie",
+    colRound: "Round",
+    colCategory: "Categoria",
+    colFragmentText: "Testo Frammento Leakato",
+    colConfidence: "Confidenza",
+    colSourceStrategy: "Strategia Sorgente",
+    noFragmentsRecorded: "Nessun frammento registrato.",
+    metricDelimiterIso: "Delimiter Isolation",
+    metricDirectiveAmbiguity: "Directive Ambiguity",
+    metricSecretRisk: "Secret Exposure Risk",
+    metricOverallRisk: "Overall Risk Rating",
+    emptyVulns: "L'analisi delle vulnerabilità si attiverà al termine della ricostruzione del System Prompt.",
+    structuralRobustnessDelta: "Robustezza Strutturale Prima / Dopo:",
+    btnCopyHardenedPrompt: "📋 Copia Prompt Hardened",
+    execSummaryTitle: "📋 Executive Summary & Security Posture",
+    waitingDefensiveReport: "In attesa dell'elaborazione del report difensivo...",
+    emptyRemediations: "Nessuna remediation disponibile finché la pipeline non è completata.",
+    hardenedPromptTitle: "🛡️ Complete Hardened Production System Prompt",
+    waitingHardenedContent: "Il prompt hardened e strutturato con isolamento XML e regole di precedenza apparirà qui.",
+    archRecsTitle: "🏗️ Raccomandazioni Architetturali Difensive (Defense-in-Depth)",
+    logInitialized: "[System] Reverse-Guardrail Frontend Dashboard inizializzato.",
+    logScopeActive: "[Security] Scope Authorization Kill-Switch attivo."
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+  let currentLang = localStorage.getItem('kitsune_lang') || 'en';
+
   // --- DOM Elements ---
   const authCheckbox = document.getElementById('authCheckbox');
   const engagementIdInput = document.getElementById('engagementId');
@@ -29,6 +222,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCopyHardenedPrompt = document.getElementById('btnCopyHardenedPrompt');
   const btnExampleCookieJson = document.getElementById('btnExampleCookieJson');
   const btnExampleCookieHeader = document.getElementById('btnExampleCookieHeader');
+
+  const langEnBtn = document.getElementById('langEnBtn');
+  const langItBtn = document.getElementById('langItBtn');
 
   const modeTabs = document.querySelectorAll('.mode-tab');
   const extensionOptions = document.getElementById('extensionOptions');
@@ -74,21 +270,61 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeRunId = null;
   let allExtractedFragments = [];
 
+  // --- i18n Translation Engine ---
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('kitsune_lang', lang);
+    document.documentElement.lang = lang;
+
+    if (lang === 'en') {
+      langEnBtn.classList.add('active');
+      langItBtn.classList.remove('active');
+    } else {
+      langItBtn.classList.add('active');
+      langEnBtn.classList.remove('active');
+    }
+
+    const dict = I18N[lang] || I18N.en;
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (dict[key]) {
+        el.innerText = dict[key];
+      }
+    });
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (dict[key]) {
+        el.placeholder = dict[key];
+      }
+    });
+
+    appendLog(lang === 'en' ? '[System] Language set to English.' : '[System] Lingua impostata su Italiano.', 'info');
+  }
+
+  if (langEnBtn && langItBtn) {
+    langEnBtn.addEventListener('click', () => setLanguage('en'));
+    langItBtn.addEventListener('click', () => setLanguage('it'));
+  }
+
   // --- Poll Extension Relay Status ---
   async function pollRelayStatus() {
     try {
       const res = await fetch('/api/v1/relay/status');
       if (res.ok) {
         const data = await res.json();
+        const dict = I18N[currentLang] || I18N.en;
+
         if (extensionStatusDot && extensionStatusText) {
           if (data.connected) {
             extensionStatusDot.style.background = '#10b981';
             extensionStatusDot.style.boxShadow = '0 0 8px rgba(16, 185, 129, 0.9)';
-            extensionStatusText.innerText = 'Stato: Estensione Connessa (Pronta)';
+            extensionStatusText.innerText = dict.extensionReady;
           } else {
             extensionStatusDot.style.background = '#ef4444';
             extensionStatusDot.style.boxShadow = '0 0 6px rgba(239, 68, 68, 0.8)';
-            extensionStatusText.innerText = 'Stato: In attesa di connessione...';
+            extensionStatusText.innerText = dict.extensionWaiting;
           }
         }
         if (extensionTargetBadge) {
@@ -97,10 +333,10 @@ document.addEventListener('DOMContentLoaded', () => {
               const u = new URL(data.target_tab.url);
               extensionTargetBadge.innerText = '🎯 ' + u.hostname + (u.pathname.length > 1 && u.pathname !== '/' ? u.pathname : '');
             } catch (e) {
-              extensionTargetBadge.innerText = '🎯 ' + (data.target_tab.title || 'Tab Rilevato');
+              extensionTargetBadge.innerText = '🎯 ' + (data.target_tab.title || 'Tab Detected');
             }
           } else {
-            extensionTargetBadge.innerText = 'Nessun tab Claude/ChatGPT';
+            extensionTargetBadge.innerText = dict.noActiveTab;
           }
         }
       }
@@ -149,7 +385,7 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
   if (btnLoadDefaultPrompt) {
     btnLoadDefaultPrompt.addEventListener('click', () => {
       internalSystemPrompt.value = DEFAULT_NEXUSTECH_PROMPT;
-      appendLog('[Config] Caricato System Prompt Ground-Truth di NexusTech.', 'info');
+      appendLog(currentLang === 'en' ? '[Config] Loaded NexusTech Ground-Truth System Prompt.' : '[Config] Caricato System Prompt Ground-Truth di NexusTech.', 'info');
     });
   }
 
@@ -197,7 +433,7 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
         httpOptions.classList.add('hidden');
         urlGroup.classList.add('hidden');
       }
-      appendLog(`[Config] Modalità target cambiata in: ${currentTargetMode.toUpperCase()}`, 'info');
+      appendLog(currentLang === 'en' ? `[Config] Target mode switched to: ${currentTargetMode.toUpperCase()}` : `[Config] Modalità target cambiata in: ${currentTargetMode.toUpperCase()}`, 'info');
     });
   });
 
@@ -207,22 +443,22 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
       {
         name: "session_id",
         value: "tok_secure_jwt_session_88129",
-        domain: "chat.target.internal",
+        domain: "claude.ai",
         path: "/"
       },
       {
         name: "auth_token",
         value: "bearer_secret_user_99",
-        domain: "chat.target.internal",
+        domain: "claude.ai",
         path: "/"
       }
     ], null, 2);
-    appendLog('[Cookie] Inserito esempio cookie JSON.', 'info');
+    appendLog(currentLang === 'en' ? '[Cookie] Inserted sample JSON cookies.' : '[Cookie] Inserito esempio cookie JSON.', 'info');
   });
 
   btnExampleCookieHeader.addEventListener('click', () => {
     cookiesInput.value = 'session_id=tok_secure_jwt_session_88129; auth_token=bearer_secret_user_99; theme=dark';
-    appendLog('[Cookie] Inserito esempio cookie Header string.', 'info');
+    appendLog(currentLang === 'en' ? '[Cookie] Inserted sample Cookie header string.' : '[Cookie] Inserito esempio cookie Header string.', 'info');
   });
 
   // --- Navigation Tabs ---
@@ -249,41 +485,50 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
   btnCopyPrompt.addEventListener('click', () => {
     const text = reconstructedPromptContent.innerText;
     navigator.clipboard.writeText(text).then(() => {
-      const original = btnCopyPrompt.innerText;
-      btnCopyPrompt.innerText = '✅ Copiato!';
-      setTimeout(() => { btnCopyPrompt.innerText = original; }, 2000);
+      const orig = btnCopyPrompt.innerText;
+      btnCopyPrompt.innerText = currentLang === 'en' ? '✅ Copied!' : '✅ Copiato!';
+      setTimeout(() => { btnCopyPrompt.innerText = orig; }, 2000);
     });
   });
 
   // --- Copy Hardened Prompt Action ---
-  btnCopyHardenedPrompt.addEventListener('click', () => {
-    const text = hardenedPromptContent.innerText;
-    navigator.clipboard.writeText(text).then(() => {
-      const original = btnCopyHardenedPrompt.innerText;
-      btnCopyHardenedPrompt.innerText = '✅ Copiato!';
-      setTimeout(() => { btnCopyHardenedPrompt.innerText = original; }, 2000);
+  if (btnCopyHardenedPrompt) {
+    btnCopyHardenedPrompt.addEventListener('click', () => {
+      const text = hardenedPromptContent.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btnCopyHardenedPrompt.innerText;
+        btnCopyHardenedPrompt.innerText = currentLang === 'en' ? '✅ Copied!' : '✅ Copiato!';
+        setTimeout(() => { btnCopyHardenedPrompt.innerText = orig; }, 2000);
+      });
     });
-  });
+  }
 
-  // --- Category Filter on Fragments Table ---
-  fragCategoryFilter.addEventListener('change', () => {
-    renderFragmentsTable(allExtractedFragments);
+  // --- Fragment Category Filter ---
+  fragCategoryFilter.addEventListener('change', (e) => {
+    const category = e.target.value;
+    if (category === 'ALL') {
+      renderFragmentsTable(allExtractedFragments);
+    } else {
+      const filtered = allExtractedFragments.filter(f => f.category === category);
+      renderFragmentsTable(filtered);
+    }
   });
 
   // --- Launch Assessment Action ---
   btnLaunch.addEventListener('click', async () => {
     const isAuthorized = authCheckbox.checked;
     const engagementId = engagementIdInput.value.trim();
+    const dict = I18N[currentLang] || I18N.en;
 
     if (!isAuthorized) {
-      appendLog('[KILL-SWITCH] Errore: target.authorized deve essere abilitato!', 'error');
-      alert('KILL-SWITCH ACTIVATED: Devi confermare l\'autorizzazione formale per eseguire il test.');
+      appendLog('[KILL-SWITCH] Error: target.authorized must be enabled!', 'error');
+      alert('KILL-SWITCH ACTIVATED: Formal authorization must be confirmed before testing.');
       return;
     }
 
     if (!engagementId) {
-      appendLog('[KILL-SWITCH] Errore: engagement_id obbligatorio.', 'error');
-      alert('KILL-SWITCH ACTIVATED: Inserisci un Engagement ID valido.');
+      appendLog('[KILL-SWITCH] Error: engagement_id is required.', 'error');
+      alert('KILL-SWITCH ACTIVATED: Valid Engagement ID is required.');
       return;
     }
 
@@ -333,266 +578,271 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
           tester: "deepseek-v4-flash",
           inspectioner: "deepseek-v4-flash",
           reverse_engineer: "deepseek-v4-flash",
-          vulnerability_analyzer: "deepseek-v4-flash",
-          hardening_reporter: "deepseek-v4-flash"
+          embedding: "models/text-embedding-004"
         }
       }
     };
 
     // UI Loading State
     btnLaunch.disabled = true;
-    btnLaunchText.innerText = 'Assessment in Esecuzione...';
-    metricStatus.innerText = 'RUNNING';
+    btnLaunchText.innerText = dict.btnRunningAssessment;
     metricStatus.className = 'metric-value status-running';
-    appendLog(`[Pipeline] Avvio Reverse-Guardrail per Engagement ${engagementId}...`, 'scope');
+    metricStatus.innerText = 'RUNNING';
+
+    appendLog(`[Pipeline] Launching Reverse-Guardrail in ${currentTargetMode.toUpperCase()} mode...`, 'info');
 
     try {
-      const resp = await fetch('/api/v1/pipeline/start', {
+      const res = await fetch('/api/v1/pipeline/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
-      if (!resp.ok) {
-        const errData = await resp.json();
-        throw new Error(errData.detail || `HTTP Error ${resp.status}`);
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || 'Pipeline initialization failed.');
       }
 
-      const data = await resp.json();
+      const data = await res.json();
       activeRunId = data.run_id;
-      appendLog(`[Pipeline] Assessment completato! Run ID: ${activeRunId}`, 'success');
+      appendLog(`[Pipeline] Pipeline finished. Run ID: ${data.run_id}`, 'success');
 
-      // Update UI with Results
-      updateDashboard(data);
+      updateMetricsBar(data);
 
-      // Fetch Full Report & Fragments & Phase 2 Assessments
-      await fetchFullReportAndFragments(activeRunId);
-      await fetchPhase2Reports(activeRunId);
+      // Fetch Full Reports
+      await fetchReport(data.run_id);
+      await fetchFragments(data.run_id);
+      await fetchPhase2Reports(data.run_id);
 
     } catch (err) {
-      appendLog(`[Pipeline Error] ${err.message}`, 'error');
-      metricStatus.innerText = 'FAILED / BLOCKED';
-      metricStatus.className = 'metric-value status-blocked';
+      console.error(err);
+      appendLog(`[Error] Execution aborted: ${err.message}`, 'error');
+      metricStatus.className = 'metric-value status-failed';
+      metricStatus.innerText = 'FAILED';
     } finally {
       btnLaunch.disabled = false;
-      btnLaunchText.innerText = 'Avvia Reverse-Guardrail Assessment';
+      btnLaunchText.innerText = dict.btnLaunchAssessment;
     }
   });
 
-  // --- Update Dashboard with Status Response ---
-  function updateDashboard(data) {
-    metricStatus.innerText = data.status.toUpperCase();
-    metricStatus.className = data.status === 'completed' ? 'metric-value status-completed' : 'metric-value status-running';
-    metricRound.innerText = `${data.current_round} / ${data.max_rounds}`;
-    
-    const confPct = (data.latest_confidence * 100).toFixed(1);
-    metricConfidence.innerText = `${confPct}%`;
-    confProgressBar.style.width = `${confPct}%`;
-    metricFragments.innerText = data.total_fragments_count;
-
-    // Render Gaps
-    gapsList.innerHTML = '';
-    if (data.gaps && data.gaps.length > 0) {
-      data.gaps.forEach(g => {
-        const li = document.createElement('li');
-        li.innerText = g;
-        gapsList.appendChild(li);
-      });
-    } else {
-      gapsList.innerHTML = '<li>Nessun gap residuo identificato. Prompt interamente ricostruito!</li>';
-    }
-  }
-
-  // --- Fetch Report and Fragments ---
-  async function fetchFullReportAndFragments(runId) {
+  // --- Fetch & Render Reconstructed System Prompt Report ---
+  async function fetchReport(runId) {
     try {
-      // 1. Fetch Report
-      const repResp = await fetch(`/api/v1/pipeline/${runId}/report`);
-      if (repResp.ok) {
-        const report = await repResp.json();
-        reconstructedPromptContent.innerText = report.reconstructed_prompt;
-
-        // Render Covered Sections
-        sectionsContainer.innerHTML = '';
-        if (report.covered_sections && report.covered_sections.length > 0) {
-          report.covered_sections.forEach(sec => {
-            const card = document.createElement('div');
-            card.className = 'section-card';
-            card.innerHTML = `
-              <div class="section-card-header">
-                <span class="section-card-title">${escapeHtml(sec.section_name)}</span>
-                <span class="section-confidence-tag">${(sec.confidence * 100).toFixed(0)}% Conf.</span>
-              </div>
-              <div class="section-card-content">${escapeHtml(sec.inferred_content)}</div>
-            `;
-            sectionsContainer.appendChild(card);
-          });
-        }
+      const res = await fetch(`/api/v1/pipeline/${runId}/report`);
+      if (res.ok) {
+        const report = await res.json();
+        reconstructedPromptContent.innerText = report.reconstructed_system_prompt || "No prompt synthesized.";
+        renderSections(report.sections || []);
+        renderGaps(report.gaps || []);
+        appendLog(`[Report] System Prompt synthesized. Overall Confidence: ${(report.overall_confidence * 100).toFixed(1)}%`, 'success');
       }
-
-      // 2. Fetch Extracted Fragments
-      const fragsResp = await fetch(`/api/v1/pipeline/${runId}/fragments`);
-      if (fragsResp.ok) {
-        allExtractedFragments = await fragsResp.json();
-        renderFragmentsTable(allExtractedFragments);
-      }
-
-    } catch (err) {
-      appendLog(`[Data Sync Error] ${err.message}`, 'warning');
+    } catch (e) {
+      appendLog(`[Error] Failed to load synthesis report: ${e.message}`, 'error');
     }
   }
 
-  // --- Fetch Phase 2 Reports (Vulnerabilities & Hardening) ---
+  // --- Fetch & Render Extracted Fragments ---
+  async function fetchFragments(runId) {
+    try {
+      const res = await fetch(`/api/v1/pipeline/${runId}/fragments`);
+      if (res.ok) {
+        allExtractedFragments = await res.json();
+        renderFragmentsTable(allExtractedFragments);
+        metricFragments.innerText = allExtractedFragments.length;
+        appendLog(`[Inspectioner] Retrieved ${allExtractedFragments.length} leaked atomic fragments from graph store.`, 'info');
+      }
+    } catch (e) {
+      appendLog(`[Error] Failed to load extracted fragments: ${e.message}`, 'error');
+    }
+  }
+
+  // --- Fetch Phase 2 (Vulnerabilities & Hardening) ---
   async function fetchPhase2Reports(runId) {
     try {
-      // 1. Fetch Vulnerability Report
-      const vulnResp = await fetch(`/api/v1/pipeline/${runId}/vulnerabilities`);
-      if (vulnResp.ok) {
-        const vData = await vulnResp.json();
-        renderVulnerabilityReport(vData);
-        appendLog(`[Threat Modeling] Individuate ${vData.vulnerabilities?.length || 0} criticità nel prompt.`, 'warning');
+      const [vulnRes, hardenRes] = await Promise.all([
+        fetch(`/api/v1/pipeline/${runId}/vulnerabilities`),
+        fetch(`/api/v1/pipeline/${runId}/hardening`)
+      ]);
+
+      if (vulnRes.ok) {
+        const vulnData = await vulnRes.json();
+        renderVulnerabilities(vulnData);
       }
 
-      // 2. Fetch Hardening Report
-      const hardResp = await fetch(`/api/v1/pipeline/${runId}/hardening`);
-      if (hardResp.ok) {
-        const hData = await hardResp.json();
-        renderHardeningReport(hData);
-        appendLog(`[Hardening] Report difensivo sintetizzato (Robustezza: ${(hData.after_hardening_score * 100).toFixed(0)}%).`, 'success');
+      if (hardenRes.ok) {
+        const hardenData = await hardenRes.json();
+        renderHardeningReport(hardenData);
       }
-    } catch (err) {
-      appendLog(`[Phase 2 Sync Error] ${err.message}`, 'warning');
+    } catch (e) {
+      appendLog(`[Phase 2] Error loading vulnerability or defensive reports: ${e.message}`, 'error');
     }
   }
 
-  // --- Render Vulnerability Report ---
-  function renderVulnerabilityReport(vData) {
-    vulnScoreDelimiter.innerText = `${(vData.delimiter_isolation_score * 100).toFixed(0)}%`;
-    vulnScoreAmbiguity.innerText = `${(vData.directive_ambiguity_index * 100).toFixed(0)}%`;
-    vulnScoreSecret.innerText = `${(vData.secret_exposure_risk * 100).toFixed(0)}%`;
+  // --- Render Vulnerability Assessment (Phase 2) ---
+  function renderVulnerabilities(data) {
+    if (!data) return;
 
-    const sev = (vData.overall_risk_rating || 'info').toLowerCase();
-    vulnScoreOverall.innerText = sev.toUpperCase();
-    vulnScoreOverall.className = `sev-badge sev-${sev}`;
+    if (vulnScoreDelimiter) vulnScoreDelimiter.innerText = `${data.delimiter_isolation_score || 0}/100`;
+    if (vulnScoreAmbiguity) vulnScoreAmbiguity.innerText = `${data.directive_ambiguity_score || 0}/100`;
+    if (vulnScoreSecret) vulnScoreSecret.innerText = `${data.secret_exposure_risk_score || 0}/100`;
 
-    vulnListContainer.innerHTML = '';
-    if (!vData.vulnerabilities || vData.vulnerabilities.length === 0) {
-      vulnListContainer.innerHTML = '<div class="empty-state">Nessuna vulnerabilità critica identificata nel System Prompt.</div>';
-      return;
+    if (vulnScoreOverall) {
+      const sev = (data.overall_severity || 'MEDIUM').toUpperCase();
+      vulnScoreOverall.innerText = sev;
+      vulnScoreOverall.className = `sev-badge sev-${sev.toLowerCase()}`;
     }
 
-    vData.vulnerabilities.forEach(v => {
-      const vSev = (v.severity || 'medium').toLowerCase();
-      const card = document.createElement('div');
-      card.className = 'vuln-card';
-      card.innerHTML = `
-        <div class="vuln-card-header">
-          <div class="vuln-card-left">
-            <span class="sev-badge sev-${vSev}">${vSev.toUpperCase()}</span>
-            <span class="vuln-title">${escapeHtml(v.title)}</span>
+    if (vulnListContainer) {
+      const vulns = data.vulnerabilities || [];
+      if (vulns.length === 0) {
+        vulnListContainer.innerHTML = `<div class="empty-state">${currentLang === 'en' ? 'No critical structural vulnerabilities detected.' : 'Nessuna vulnerabilità strutturale rilevata.'}</div>`;
+        return;
+      }
+
+      vulnListContainer.innerHTML = vulns.map(v => `
+        <div class="vuln-card">
+          <div class="vuln-card-header">
+            <div>
+              <div class="vuln-title">${escapeHtml(v.title || v.vulnerability_type)}</div>
+              <div class="vuln-meta">${escapeHtml(v.owasp_category || 'OWASP-LLM01')} • Severity: <strong>${escapeHtml(v.severity)}</strong></div>
+            </div>
+            <span class="sev-badge sev-${(v.severity || 'low').toLowerCase()}">${escapeHtml(v.severity)}</span>
           </div>
-          <span class="vuln-owasp-tag">${escapeHtml(v.owasp_reference || 'OWASP LLM01')}</span>
+          <div class="vuln-desc">${escapeHtml(v.description)}</div>
+          ${v.affected_section ? `<div class="vuln-section-tag">Section: <code>${escapeHtml(v.affected_section)}</code></div>` : ''}
+          <div class="vuln-remediation-box">
+            <strong>${currentLang === 'en' ? 'Recommended Fix:' : 'Fix Raccomandato:'}</strong> ${escapeHtml(v.remediation_recommendation)}
+          </div>
         </div>
-        <div class="vuln-section-tag">📍 Sezione: <strong>${escapeHtml(v.affected_section)}</strong></div>
-        <p class="vuln-desc">${escapeHtml(v.description)}</p>
-        <div class="vuln-risk-box">⚠️ <strong>Rischio:</strong> ${escapeHtml(v.risk_explanation)}</div>
-        ${v.evidence_snippet ? `<div class="vuln-evidence">🔍 Evidenza: <code>${escapeHtml(v.evidence_snippet)}</code></div>` : ''}
-      `;
-      vulnListContainer.appendChild(card);
-    });
-  }
-
-  // --- Render Hardening Report ---
-  function renderHardeningReport(hData) {
-    scoreBeforeHardening.innerText = `${(hData.before_hardening_score * 100).toFixed(0)}%`;
-    scoreAfterHardening.innerText = `${(hData.after_hardening_score * 100).toFixed(0)}%`;
-    hardeningExecSummary.innerText = hData.executive_summary || 'Nessun riepilogo disponibile.';
-
-    remediationsContainer.innerHTML = '';
-    if (hData.remediations && hData.remediations.length > 0) {
-      hData.remediations.forEach(rem => {
-        const card = document.createElement('div');
-        card.className = 'remediation-card';
-
-        const patternsHtml = (rem.applied_patterns || [])
-          .map(p => `<span class="pattern-badge">${escapeHtml(p)}</span>`)
-          .join('');
-
-        card.innerHTML = `
-          <div class="rem-header">
-            <span class="rem-title">🛠️ Sezione: ${escapeHtml(rem.affected_section)}</span>
-            <div class="rem-patterns">${patternsHtml}</div>
-          </div>
-          <div class="diff-grid">
-            <div class="diff-panel before">
-              <div class="diff-panel-title">❌ Vulnerabile (Originale)</div>
-              ${escapeHtml(rem.original_text)}
-            </div>
-            <div class="diff-panel after">
-              <div class="diff-panel-title">✅ Hardened (Corretto)</div>
-              ${escapeHtml(rem.hardened_text)}
-            </div>
-          </div>
-          <p class="rem-rationale">💡 <strong>Spiegazione & Mitigazione:</strong> ${escapeHtml(rem.rationale)}</p>
-        `;
-        remediationsContainer.appendChild(card);
-      });
-    }
-
-    hardenedPromptContent.innerText = hData.hardened_system_prompt || 'Nessun prompt hardened generato.';
-
-    archRecsList.innerHTML = '';
-    if (hData.architectural_recommendations && hData.architectural_recommendations.length > 0) {
-      hData.architectural_recommendations.forEach(rec => {
-        const li = document.createElement('li');
-        li.innerText = rec;
-        archRecsList.appendChild(li);
-      });
+      `).join('');
     }
   }
 
-  // --- Render Fragments Table ---
-  function renderFragmentsTable(fragments) {
-    const filter = fragCategoryFilter.value;
-    const filtered = filter === 'ALL' ? fragments : fragments.filter(f => f.category === filter);
+  // --- Render Hardening & Remediation Report (Phase 2) ---
+  function renderHardeningReport(data) {
+    if (!data) return;
 
-    fragmentsTableBody.innerHTML = '';
-    if (!filtered || filtered.length === 0) {
-      fragmentsTableBody.innerHTML = '<tr><td colspan="5" class="text-center">Nessun frammento per il filtro selezionato.</td></tr>';
+    if (scoreBeforeHardening) scoreBeforeHardening.innerText = `${data.score_before || 0}/100`;
+    if (scoreAfterHardening) scoreAfterHardening.innerText = `${data.score_after || 0}/100`;
+    if (hardeningExecSummary) hardeningExecSummary.innerText = data.executive_summary || "Report generated.";
+    if (hardenedPromptContent) hardenedPromptContent.innerText = data.hardened_system_prompt || "Hardened prompt unavailable.";
+
+    // Render section-by-section diffs
+    if (remediationsContainer) {
+      const remediations = data.section_remediations || [];
+      if (remediations.length === 0) {
+        remediationsContainer.innerHTML = `<div class="empty-state">${currentLang === 'en' ? 'No section modifications required.' : 'Nessuna modifica di sezione richiesta.'}</div>`;
+      } else {
+        remediationsContainer.innerHTML = remediations.map(r => `
+          <div class="remediation-card">
+            <div class="remediation-title">
+              <span>Section: <strong>${escapeHtml(r.section_name)}</strong></span>
+              <span class="badge" style="background: rgba(16,185,129,0.2); color:#10b981;">HARDENED</span>
+            </div>
+            <div class="diff-grid">
+              <div class="diff-box diff-original">
+                <div class="diff-label">${currentLang === 'en' ? 'Original Synthesized Section' : 'Sezione Ricostruita Originale'}</div>
+                <div class="diff-content">${escapeHtml(r.original_content || '(Empty)')}</div>
+              </div>
+              <div class="diff-box diff-hardened">
+                <div class="diff-label">${currentLang === 'en' ? 'Hardened Defensive Section' : 'Sezione Hardened Difensiva'}</div>
+                <div class="diff-content">${escapeHtml(r.hardened_content)}</div>
+              </div>
+            </div>
+            <div class="rationale-box">
+              <strong>${currentLang === 'en' ? 'Hardening Rationale:' : 'Razionale Difensivo:'}</strong> ${escapeHtml(r.rationale)}
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Render architectural recommendations
+    if (archRecsList) {
+      const recs = data.architectural_recommendations || [];
+      if (recs.length === 0) {
+        archRecsList.innerHTML = `<li>${currentLang === 'en' ? 'No architectural recommendations required.' : 'Nessuna raccomandazione architetturale necessaria.'}</li>`;
+      } else {
+        archRecsList.innerHTML = recs.map(rec => `<li>${escapeHtml(rec)}</li>`).join('');
+      }
+    }
+  }
+
+  // --- UI Render Helpers ---
+  function updateMetricsBar(data) {
+    metricStatus.className = `metric-value status-${data.status.toLowerCase()}`;
+    metricStatus.innerText = data.status.toUpperCase();
+    metricRound.innerText = `${data.current_round} / ${data.max_rounds}`;
+
+    const confPct = Math.round(data.latest_confidence * 100);
+    metricConfidence.innerText = `${confPct}%`;
+    confProgressBar.style.width = `${confPct}%`;
+  }
+
+  function renderSections(sections) {
+    if (!sections || sections.length === 0) {
+      sectionsContainer.innerHTML = `<div class="empty-state">${currentLang === 'en' ? 'No sections analyzed yet.' : 'Nessuna sezione analizzata ancora.'}</div>`;
       return;
     }
 
-    filtered.forEach(f => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><strong>R#${f.round_id}</strong></td>
-        <td><span class="category-tag">${f.category}</span></td>
-        <td>${escapeHtml(f.text)}</td>
-        <td><span class="conf-pill">${(f.confidence_score * 100).toFixed(0)}%</span></td>
-        <td><code>${f.source_strategy}</code></td>
-      `;
-      fragmentsTableBody.appendChild(tr);
-    });
+    sectionsContainer.innerHTML = sections.map(s => `
+      <div class="section-card">
+        <div class="section-card-header">
+          <span class="section-title">${escapeHtml(s.title || s.name || 'Section')}</span>
+          <span class="conf-badge">${Math.round((s.confidence || 0) * 100)}%</span>
+        </div>
+        <div class="section-body">${escapeHtml(s.content || s.text || '')}</div>
+      </div>
+    `).join('');
   }
 
-  // --- Helper: Append Log ---
-  function appendLog(message, type = 'info') {
-    const line = document.createElement('div');
-    line.className = `log-line ${type}`;
-    const time = new Date().toLocaleTimeString();
-    line.innerText = `[${time}] ${message}`;
-    logConsole.appendChild(line);
+  function renderGaps(gaps) {
+    if (!gaps || gaps.length === 0) {
+      gapsList.innerHTML = `<li>${currentLang === 'en' ? 'No residual gaps identified.' : 'Nessun gap residuo identificato.'}</li>`;
+      return;
+    }
+    gapsList.innerHTML = gaps.map(g => `<li>${escapeHtml(g)}</li>`).join('');
+  }
+
+  function renderFragmentsTable(fragments) {
+    if (!fragments || fragments.length === 0) {
+      fragmentsTableBody.innerHTML = `<tr><td colspan="5" class="text-center">${currentLang === 'en' ? 'No fragments recorded yet.' : 'Nessun frammento registrato.'}</td></tr>`;
+      return;
+    }
+
+    fragmentsTableBody.innerHTML = fragments.map(f => `
+      <tr>
+        <td><strong>#${f.round_id}</strong></td>
+        <td><span class="badge badge-cat badge-${escapeHtml(f.category)}">${escapeHtml(f.category)}</span></td>
+        <td class="code-snippet">${escapeHtml(f.text)}</td>
+        <td><span class="conf-pill">${Math.round(f.confidence_score * 100)}%</span></td>
+        <td><code class="strategy-tag">${escapeHtml(f.source_strategy)}</code></td>
+      </tr>
+    `).join('');
+  }
+
+  function appendLog(msg, type = 'info') {
+    const d = new Date();
+    const timeStr = d.toTimeString().split(' ')[0];
+    const el = document.createElement('div');
+    el.className = `log-line ${type}`;
+    el.innerText = `[${timeStr}] ${msg}`;
+    logConsole.appendChild(el);
     logConsole.scrollTop = logConsole.scrollHeight;
   }
 
-  // --- Helper: HTML Escape ---
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+  function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
   }
+
+  // Initialize Language (Default EN)
+  setLanguage(currentLang);
 });
