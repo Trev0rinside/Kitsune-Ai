@@ -72,13 +72,18 @@ class ExtensionRelayManager:
             logger.error(f"[ExtensionRelay] Error handling message from extension: {err}")
 
     async def dispatch_probe(
-        self, attempt_id: str, round_id: int, payload: str, timeout_seconds: float = 60.0
+        self,
+        attempt_id: str,
+        round_id: int,
+        payload: str,
+        target_url: Optional[str] = None,
+        timeout_seconds: float = 60.0,
     ) -> Dict[str, Any]:
         """Dispatch a probe prompt to the connected Chrome Extension and await result."""
         if not self.is_connected():
             raise RuntimeError(
                 "No Chrome Extension connected. Please open Chrome, make sure the Kitsune Extension is loaded, "
-                "and ensure a tab with claude.ai or chatgpt.com is open."
+                "and ensure a tab with your target AI chat is open."
             )
 
         ws = self.active_connections[-1] # Use latest active connection
@@ -91,6 +96,7 @@ class ExtensionRelayManager:
             "attempt_id": attempt_id,
             "round_id": round_id,
             "payload": payload,
+            "target_url": target_url,
         }
 
         try:

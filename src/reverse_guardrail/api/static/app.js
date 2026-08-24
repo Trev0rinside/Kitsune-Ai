@@ -401,7 +401,8 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
         if (internalOptions) internalOptions.classList.add('hidden');
         browserOptions.classList.add('hidden');
         httpOptions.classList.add('hidden');
-        urlGroup.classList.add('hidden');
+        urlGroup.classList.remove('hidden');
+        targetUrlInput.placeholder = 'https://kimi.moonshot.cn, https://claude.ai/new, https://chatgpt.com (or empty for active tab)';
         pollRelayStatus();
       } else if (currentTargetMode === 'internal') {
         if (extensionOptions) extensionOptions.classList.add('hidden');
@@ -537,14 +538,14 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
       authorized: isAuthorized,
       engagement_id: engagementId,
       target_name: currentTargetMode === 'extension'
-        ? 'Chrome Extension Relay (Claude/ChatGPT)'
+        ? (targetUrlInput.value.trim() ? `Chrome Extension Relay (${targetUrlInput.value.trim()})` : 'Chrome Extension Relay (Active Tab)')
         : currentTargetMode === 'internal'
         ? `Internal Target (${internalModelSpec.value})`
         : currentTargetMode === 'mock' ? 'Mock NexusTech Simulator' : 'Target System SUT',
       target_mode: currentTargetMode,
       target_model: currentTargetMode === 'internal' ? internalModelSpec.value : null,
       internal_system_prompt: currentTargetMode === 'internal' ? (internalSystemPrompt.value.trim() || null) : null,
-      target_url: currentTargetMode === 'extension' ? 'https://claude.ai/new' : ((currentTargetMode === 'browser' || currentTargetMode === 'http') ? (targetUrlInput.value.trim() || null) : null),
+      target_url: targetUrlInput.value.trim() || null,
       use_browser: currentTargetMode === 'browser',
       cookies: currentTargetMode === 'browser' ? (cookiesInput.value.trim() || null) : null,
       input_selector: inputSelectorInput.value.trim() || null,

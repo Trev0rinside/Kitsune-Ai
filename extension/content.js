@@ -113,18 +113,23 @@ async function waitForChatInput(timeoutMs = 8000) {
 function findChatInputElement() {
   const selectors = [
     "div[contenteditable='true'].ProseMirror",
+    "div[data-slate-editor='true']",
+    "div[contenteditable='plaintext-only']",
+    "div.chat-input-editor",
     "fieldset div[contenteditable='true']",
     "div[contenteditable='true']",
     "#prompt-textarea",
     "textarea[placeholder*='message' i]",
     "textarea[placeholder*='how can' i]",
     "textarea[placeholder*='ask' i]",
+    "textarea[placeholder*='kimi' i]",
+    "textarea[placeholder*='chat' i]",
     "textarea",
     "input[type='text']"
   ];
   for (const sel of selectors) {
     const el = document.querySelector(sel);
-    if (el) return el;
+    if (el && isVisible(el)) return el;
   }
   return null;
 }
@@ -138,6 +143,11 @@ async function clickSendButton(inputElem) {
     "button[aria-label*='Send' i]",
     "button[aria-label*='Invia' i]",
     "button[data-testid='send-button']",
+    "div[class*='send-btn']",
+    "div[class*='sendButton']",
+    "button[class*='send']",
+    "button[class*='submit']",
+    "div[role='button']:has(svg)",
     "button:has(svg.lucide-arrow-up)",
     "button:has(svg.lucide-send)",
     "button[type='submit']"
@@ -158,7 +168,7 @@ async function clickSendButton(inputElem) {
   // Look for any button with arrow up / send SVG near the input
   const container = inputElem.closest("form") || inputElem.closest("fieldset") || inputElem.parentElement?.parentElement;
   if (container) {
-    const buttons = container.querySelectorAll("button");
+    const buttons = container.querySelectorAll("button, div[role='button']");
     for (const btn of buttons) {
       if (isVisible(btn) && !btn.disabled && btn.querySelector("svg")) {
         btn.click();
@@ -172,6 +182,13 @@ async function clickSendButton(inputElem) {
 
 function getAssistantMessages() {
   const selectors = [
+    "div[class*='segment-content']",
+    "div[class*='chat-message']",
+    "div[class*='messageContent']",
+    "div[class*='markdown']",
+    "div[class*='answer']",
+    "div[data-role='assistant']",
+    "div[class*='assistant-message']",
     ".font-claude-message",
     "div.standard-markdown",
     "[data-message-author='assistant']",

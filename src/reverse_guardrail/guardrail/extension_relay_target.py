@@ -37,10 +37,12 @@ class ExtensionRelayGuardrailTarget(BaseGuardrailTarget):
         start_time = time.monotonic()
 
         try:
+            target_url = self.scope_config.target_url if self.scope_config else None
             result = await relay_manager.dispatch_probe(
                 attempt_id=attempt.attempt_id,
                 round_id=attempt.round_id,
                 payload=attempt.payload,
+                target_url=target_url,
                 timeout_seconds=self.timeout,
             )
 

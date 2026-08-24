@@ -6,12 +6,11 @@
   "permissions": [
     "tabs",
     "activeTab",
-    "storage"
+    "storage",
+    "scripting"
   ],
   "host_permissions": [
-    "https://claude.ai/*",
-    "https://chatgpt.com/*",
-    "https://*.openai.com/*",
+    "<all_urls>",
     "http://localhost/*",
     "http://127.0.0.1/*"
   ],
@@ -21,9 +20,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://claude.ai/*",
-        "https://chatgpt.com/*",
-        "https://*.openai.com/*"
+        "<all_urls>"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"

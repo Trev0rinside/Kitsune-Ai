@@ -1,6 +1,6 @@
 /**
  * Kitsune Guardrail Relay - Background Service Worker
- * Manages WebSocket bridge between Kitsune Python engine and active target tabs.
+ * Manages WebSocket bridge between Kitsune Python engine and active target tabs (Kimi, Claude, ChatGPT, etc.).
  */
 
 const WS_URL = "ws://127.0.0.1:8888/ws/relay";
@@ -31,7 +31,7 @@ function connectWebSocket() {
       sendWsMessage({
         type: "HANDSHAKE",
         client: "chrome-extension-relay",
-        version: "1.0.0",
+        version: "1.1.0",
         active_tab: activeTab ? { id: activeTab.id, url: activeTab.url, title: activeTab.title } : null
       });
     };
@@ -82,25 +82,59 @@ function sendWsMessage(obj) {
   }
 }
 
-// --- Find Active Target Tab (Claude.ai / ChatGPT / Target Chat) ---
-async function findTargetTab() {
+// --- Find Active Target Tab ---
+async function findTargetTab(requestedTargetUrl = null) {
   try {
     const tabs = await chrome.tabs.query({});
-    // Priority 1: claude.ai or chatgpt.com
+
+    // 1. If a specific target URL/domain was requested in the probe (e.g. "kimi.moonshot.cn" or "kimi.ai"):
+    if (requestedTargetUrl && typeof requestedTargetUrl === "string" && requestedTargetUrl.trim().length > 0) {
+      try {
+        let domain = requestedTargetUrl.trim();
+        if (domain.startsWith("http://") || domain.startsWith("https://")) {
+          domain = new URL(domain).hostname.replace(/^www\./, "");
+        }
+        const matched = tabs.find(t => t.url && t.url.includes(domain));
+        if (matched) {
+          lastTargetTabInfo = { id: matched.id, url: matched.url, title: matched.title };
+          return matched;
+        }
+      } catch (e) {
+        console.warn("[Kitsune Relay] URL match warning:", e);
+      }
+    }
+
+    // 2. Currently active focused tab in the last focused window (where the user is looking!)
+    const activeTabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (activeTabs.length > 0 && activeTabs[0].url && !activeTabs[0].url.startsWith("chrome://") && !activeTabs[0].url.startsWith("edge://")) {
+      const activeTab = activeTabs[0];
+      lastTargetTabInfo = { id: activeTab.id, url: activeTab.url, title: activeTab.title };
+      return activeTab;
+    }
+
+    // 3. Any active tab across any Chrome window
+    const [anyActiveTab] = await chrome.tabs.query({ active: true });
+    if (anyActiveTab && anyActiveTab.url && !anyActiveTab.url.startsWith("chrome://") && !anyActiveTab.url.startsWith("edge://")) {
+      lastTargetTabInfo = { id: anyActiveTab.id, url: anyActiveTab.url, title: anyActiveTab.title };
+      return anyActiveTab;
+    }
+
+    // 4. Fallback: Any open AI chat tab (Kimi, Claude, ChatGPT, DeepSeek, Perplexity, Poe, Mistral, Grok)
     const target = tabs.find(t => t.url && (
+      t.url.includes("kimi.moonshot.cn") ||
+      t.url.includes("kimi.ai") ||
+      t.url.includes("kimi.com") ||
       t.url.includes("claude.ai") || 
       t.url.includes("chatgpt.com") || 
-      t.url.includes("chat.openai.com")
+      t.url.includes("chat.openai.com") ||
+      t.url.includes("deepseek.com") ||
+      t.url.includes("perplexity.ai") ||
+      t.url.includes("poe.com") ||
+      t.url.includes("mistral.ai")
     ));
     if (target) {
       lastTargetTabInfo = { id: target.id, url: target.url, title: target.title };
       return target;
-    }
-    // Priority 2: Currently active focused tab
-    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (activeTab && activeTab.url && !activeTab.url.startsWith("chrome://")) {
-      lastTargetTabInfo = { id: activeTab.id, url: activeTab.url, title: activeTab.title };
-      return activeTab;
     }
   } catch (err) {
     console.error("[Kitsune Relay] Error querying tabs:", err);
@@ -110,8 +144,8 @@ async function findTargetTab() {
 
 // --- Handle Probe Request from Kitsune Engine ---
 async function handleProbeRequest(probe) {
-  const { attempt_id, round_id, payload } = probe;
-  const targetTab = await findTargetTab();
+  const { attempt_id, round_id, payload, target_url } = probe;
+  const targetTab = await findTargetTab(target_url);
 
   if (!targetTab) {
     console.error("[Kitsune Relay] No target tab found to execute probe!");
@@ -121,15 +155,14 @@ async function handleProbeRequest(probe) {
       round_id: round_id,
       raw_response: "",
       status_code: 404,
-      error_message: "No open Claude.ai or ChatGPT tab detected in Chrome. Please open claude.ai in a tab."
+      error_message: "No open target tab detected in Chrome. Please open your AI chat (Kimi, Claude, ChatGPT) in a tab."
     });
     return;
   }
 
   console.log(`[Kitsune Relay] Forwarding probe ${attempt_id} to Tab ${targetTab.id} (${targetTab.url})`);
 
-  try {
-    // Send to content script in target tab
+  async function sendToContentScript(retryOnMissing = true) {
     chrome.tabs.sendMessage(
       targetTab.id,
       {
@@ -138,16 +171,32 @@ async function handleProbeRequest(probe) {
         round_id: round_id,
         payload: payload
       },
-      (response) => {
+      async (response) => {
         if (chrome.runtime.lastError) {
-          console.error("[Kitsune Relay] Tab message error:", chrome.runtime.lastError.message);
+          const errMsg = chrome.runtime.lastError.message || "";
+          console.warn("[Kitsune Relay] Tab message error:", errMsg);
+
+          if (retryOnMissing && (errMsg.includes("Receiving end does not exist") || errMsg.includes("Could not establish connection"))) {
+            try {
+              console.log("[Kitsune Relay] Dynamically injecting content.js into tab", targetTab.id);
+              await chrome.scripting.executeScript({
+                target: { tabId: targetTab.id },
+                files: ["content.js"]
+              });
+              await new Promise(r => setTimeout(r, 400));
+              return sendToContentScript(false);
+            } catch (injErr) {
+              console.error("[Kitsune Relay] Dynamic script injection failed:", injErr);
+            }
+          }
+
           sendWsMessage({
             type: "PROBE_RESPONSE",
             attempt_id: attempt_id,
             round_id: round_id,
             raw_response: "",
             status_code: 500,
-            error_message: `Content script not active on tab ${targetTab.url}. Refresh the tab.`
+            error_message: `Content script not active on tab ${targetTab.url}. Please refresh the tab.`
           });
           return;
         }
@@ -164,17 +213,9 @@ async function handleProbeRequest(probe) {
         });
       }
     );
-  } catch (err) {
-    console.error("[Kitsune Relay] Error executing probe in tab:", err);
-    sendWsMessage({
-      type: "PROBE_RESPONSE",
-      attempt_id: attempt_id,
-      round_id: round_id,
-      raw_response: "",
-      status_code: 500,
-      error_message: err.message
-    });
   }
+
+  sendToContentScript(true);
 }
 
 // --- Listen to Messages from Extension Popup ---
@@ -205,4 +246,4 @@ setInterval(async () => {
       active_tab: activeTab ? { id: activeTab.id, url: activeTab.url } : null
     });
   }
-}, 5000);
+}, 4000);
