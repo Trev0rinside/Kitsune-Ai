@@ -261,11 +261,17 @@
         </div>
       </div>
 
-      <!-- Launch Action -->
-      <button type="button" class="btn btn-primary btn-launch" id="btnLaunch">
-        <span class="btn-icon">🚀</span>
-        <span id="btnLaunchText" data-i18n="btnLaunchAssessment">Launch Reverse-Guardrail Assessment</span>
-      </button>
+      <!-- Action Buttons (Launch / Stop) -->
+      <div class="action-buttons-group">
+        <button type="button" class="btn btn-primary btn-launch" id="btnLaunch">
+          <span class="btn-icon">🚀</span>
+          <span id="btnLaunchText" data-i18n="btnLaunchAssessment">Launch Reverse-Guardrail Assessment</span>
+        </button>
+        <button type="button" class="btn btn-danger btn-stop hidden" id="btnStop">
+          <span class="btn-icon">🛑</span>
+          <span id="btnStopText" data-i18n="btnStopAssessment">Stop</span>
+        </button>
+      </div>
     </section>
 
     <!-- Right Panel: Live Assessment Cockpit & Results -->

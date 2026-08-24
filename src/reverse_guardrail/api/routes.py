@@ -104,6 +104,28 @@ async def start_pipeline(request: PipelineStartRequest) -> PipelineStatusRespons
         )
 
 
+@router.post("/pipeline/stop")
+@router.post("/pipeline/{run_id}/stop")
+async def stop_pipeline(run_id: Optional[str] = None) -> Dict[str, Any]:
+    """Stop and abort any currently running Reverse-Guardrail pipeline."""
+    stopped_count = 0
+
+    # Cancel any in-flight Chrome Extension probe
+    relay_manager.cancel_all_pending_probes()
+
+    # Cancel active runner instances
+    target_runners = [(_id, r) for _id, r in _RUNNERS.items() if not run_id or _id == run_id]
+    for r_id, runner in target_runners:
+        runner.cancel()
+        stopped_count += 1
+
+    return {
+        "status": "stopped",
+        "message": "Assessment stopped by operator.",
+        "stopped_count": stopped_count,
+    }
+
+
 @router.get("/pipeline/{run_id}/status", response_model=PipelineStatusResponse)
 async def get_pipeline_status(run_id: str) -> PipelineStatusResponse:
     """Retrieve execution status and confidence progression of an assessment run."""

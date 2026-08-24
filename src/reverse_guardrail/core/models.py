@@ -41,6 +41,7 @@ class PipelineStatus(str, Enum):
     PAUSED = "paused"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
     ABORTED_UNAUTHORIZED = "aborted_unauthorized"
 
 

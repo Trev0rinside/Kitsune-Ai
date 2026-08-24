@@ -41,6 +41,14 @@ class ExtensionRelayManager:
         """Returns true if at least one Chrome Extension client is actively connected."""
         return len(self.active_connections) > 0
 
+    def cancel_all_pending_probes(self) -> None:
+        """Cancel any in-flight probe futures immediately."""
+        for attempt_id, future in list(self._pending_probes.items()):
+            if not future.done():
+                future.cancel()
+        self._pending_probes.clear()
+        logger.info("[ExtensionRelay] Cancelled all pending in-flight probes.")
+
     def get_status(self) -> Dict[str, Any]:
         """Returns JSON-serializable status report of the extension relay."""
         return {

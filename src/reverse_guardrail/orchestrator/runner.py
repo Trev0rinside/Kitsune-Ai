@@ -92,11 +92,20 @@ class PipelineRunner:
             hardening_reporter=self.hardening_reporter,
         )
         self.state: Optional[PipelineState] = None
+        self.is_cancelled: bool = False
+
+    def cancel(self) -> None:
+        """Cancel and abort the active pipeline run immediately."""
+        self.is_cancelled = True
+        if self.state:
+            self.state.status = PipelineStatus.CANCELLED
+            self.state.stop_reason = "Aborted by operator."
 
     async def initialize(self) -> PipelineState:
         """Initialize DB store and initial state."""
         await self.store.initialize()
         await self.store.clear()
+        self.is_cancelled = False
         run_id = f"RUN-{uuid4().hex[:8].upper()}"
         self.state = PipelineState(
             run_id=run_id,
@@ -116,5 +125,9 @@ class PipelineRunner:
             self.state = PipelineState(**final_state_dict)
         elif isinstance(final_state_dict, PipelineState):
             self.state = final_state_dict
+
+        if self.is_cancelled:
+            self.state.status = PipelineStatus.CANCELLED
+            self.state.stop_reason = "Aborted by operator."
 
         return self.state

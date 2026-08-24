@@ -58,6 +58,9 @@ const I18N = {
     confThresholdLabel: "Confidence Target",
     btnLaunchAssessment: "Launch Reverse-Guardrail Assessment",
     btnRunningAssessment: "Assessment in Progress...",
+    btnStopAssessment: "Stop",
+    btnStoppingAssessment: "Stopping...",
+    btnStoppedAssessment: "Stopped",
     metricPipelineStatus: "Pipeline Status",
     metricCurrentRound: "Current Round",
     metricReconConfidence: "Reconstruction Confidence",
@@ -152,6 +155,9 @@ const I18N = {
     confThresholdLabel: "Soglia Confidenza",
     btnLaunchAssessment: "Avvia Reverse-Guardrail Assessment",
     btnRunningAssessment: "Assessment in Corso...",
+    btnStopAssessment: "Stop",
+    btnStoppingAssessment: "Interruzione...",
+    btnStoppedAssessment: "Interrotto",
     metricPipelineStatus: "Stato Pipeline",
     metricCurrentRound: "Round Corrente",
     metricReconConfidence: "Confidenza Ricostruzione",
@@ -218,6 +224,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const btnLaunch = document.getElementById('btnLaunch');
   const btnLaunchText = document.getElementById('btnLaunchText');
+  const btnStop = document.getElementById('btnStop');
+  const btnStopText = document.getElementById('btnStopText');
   const btnCopyPrompt = document.getElementById('btnCopyPrompt');
   const btnCopyHardenedPrompt = document.getElementById('btnCopyHardenedPrompt');
   const btnExampleCookieJson = document.getElementById('btnExampleCookieJson');
@@ -587,6 +595,11 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
     // UI Loading State
     btnLaunch.disabled = true;
     btnLaunchText.innerText = dict.btnRunningAssessment;
+    if (btnStop) {
+      btnStop.classList.remove('hidden');
+      btnStop.disabled = false;
+      if (btnStopText) btnStopText.innerText = dict.btnStopAssessment || 'Stop';
+    }
     metricStatus.className = 'metric-value status-running';
     metricStatus.innerText = 'RUNNING';
 
@@ -618,13 +631,44 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
     } catch (err) {
       console.error(err);
       appendLog(`[Error] Execution aborted: ${err.message}`, 'error');
-      metricStatus.className = 'metric-value status-failed';
-      metricStatus.innerText = 'FAILED';
+      if (metricStatus.innerText !== 'CANCELLED') {
+        metricStatus.className = 'metric-value status-failed';
+        metricStatus.innerText = 'FAILED';
+      }
     } finally {
       btnLaunch.disabled = false;
       btnLaunchText.innerText = dict.btnLaunchAssessment;
+      if (btnStop) {
+        btnStop.classList.add('hidden');
+      }
     }
   });
+
+  // --- Stop Assessment Action ---
+  if (btnStop) {
+    btnStop.addEventListener('click', async () => {
+      const dict = I18N[currentLang] || I18N.en;
+      btnStop.disabled = true;
+      if (btnStopText) btnStopText.innerText = dict.btnStoppingAssessment || 'Stopping...';
+      appendLog(currentLang === 'en' ? '[Pipeline] Stopping assessment...' : '[Pipeline] Interruzione assessment in corso...', 'warn');
+
+      try {
+        const res = await fetch('/api/v1/pipeline/stop', { method: 'POST' });
+        if (res.ok) {
+          appendLog(currentLang === 'en' ? '[Pipeline] Assessment successfully stopped.' : '[Pipeline] Assessment interrotto con successo.', 'info');
+          metricStatus.className = 'metric-value status-cancelled';
+          metricStatus.innerText = 'CANCELLED';
+        }
+      } catch (err) {
+        appendLog(`[Pipeline] Stop error: ${err.message}`, 'error');
+      } finally {
+        btnStop.classList.add('hidden');
+        btnLaunch.disabled = false;
+        btnLaunchText.innerText = dict.btnLaunchAssessment;
+        if (btnStopText) btnStopText.innerText = dict.btnStopAssessment || 'Stop';
+      }
+    });
+  }
 
   // --- Fetch & Render Reconstructed System Prompt Report ---
   async function fetchReport(runId) {
