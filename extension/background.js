@@ -1,6 +1,7 @@
 /**
  * Kitsune Guardrail Relay - Background Service Worker
- * Manages WebSocket bridge between Kitsune Python engine and active target tabs (Kimi, Claude, ChatGPT, etc.).
+ * Universal WebSocket bridge between Kitsune Python engine and ANY target web chat / AI agent portal.
+ * 100% domain-agnostic: Supports custom enterprise endpoints, internal intranet portals, and public SUTs.
  */
 
 const WS_URL = "ws://127.0.0.1:8888/ws/relay";
@@ -31,7 +32,7 @@ function connectWebSocket() {
       sendWsMessage({
         type: "HANDSHAKE",
         client: "chrome-extension-relay",
-        version: "1.1.0",
+        version: "1.2.0",
         active_tab: activeTab ? { id: activeTab.id, url: activeTab.url, title: activeTab.title } : null
       });
     };
@@ -82,59 +83,66 @@ function sendWsMessage(obj) {
   }
 }
 
-// --- Find Active Target Tab ---
+function isInternalBrowserUrl(url) {
+  if (!url) return true;
+  return (
+    url.startsWith("chrome://") ||
+    url.startsWith("chrome-extension://") ||
+    url.startsWith("edge://") ||
+    url.startsWith("about:") ||
+    url.startsWith("devtools://")
+  );
+}
+
+// --- Dynamic Universal Tab Resolver (Domain Agnostic) ---
 async function findTargetTab(requestedTargetUrl = null) {
   try {
     const tabs = await chrome.tabs.query({});
 
-    // 1. If a specific target URL/domain was requested in the probe (e.g. "kimi.moonshot.cn" or "kimi.ai"):
+    // 1. Target URL specified by user in dashboard (Enterprise custom portal / local port / specific domain)
     if (requestedTargetUrl && typeof requestedTargetUrl === "string" && requestedTargetUrl.trim().length > 0) {
       try {
-        let domain = requestedTargetUrl.trim();
-        if (domain.startsWith("http://") || domain.startsWith("https://")) {
-          domain = new URL(domain).hostname.replace(/^www\./, "");
+        let cleanReq = requestedTargetUrl.trim().toLowerCase();
+        let targetHost = cleanReq;
+        if (cleanReq.startsWith("http://") || cleanReq.startsWith("https://")) {
+          targetHost = new URL(cleanReq).hostname.replace(/^www\./, "");
         }
-        const matched = tabs.find(t => t.url && t.url.includes(domain));
+        
+        const matched = tabs.find(t => {
+          if (!t.url || isInternalBrowserUrl(t.url)) return false;
+          const tUrl = t.url.toLowerCase();
+          return tUrl.includes(targetHost) || tUrl.includes(cleanReq);
+        });
+
         if (matched) {
           lastTargetTabInfo = { id: matched.id, url: matched.url, title: matched.title };
           return matched;
         }
       } catch (e) {
-        console.warn("[Kitsune Relay] URL match warning:", e);
+        console.warn("[Kitsune Relay] Target URL matching warning:", e);
       }
     }
 
-    // 2. Currently active focused tab in the last focused window (where the user is looking!)
+    // 2. Currently focused/active tab where the security tester is currently positioned
     const activeTabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    if (activeTabs.length > 0 && activeTabs[0].url && !activeTabs[0].url.startsWith("chrome://") && !activeTabs[0].url.startsWith("edge://")) {
+    if (activeTabs.length > 0 && activeTabs[0].url && !isInternalBrowserUrl(activeTabs[0].url)) {
       const activeTab = activeTabs[0];
       lastTargetTabInfo = { id: activeTab.id, url: activeTab.url, title: activeTab.title };
       return activeTab;
     }
 
-    // 3. Any active tab across any Chrome window
+    // 3. Active tab in any Chrome window
     const [anyActiveTab] = await chrome.tabs.query({ active: true });
-    if (anyActiveTab && anyActiveTab.url && !anyActiveTab.url.startsWith("chrome://") && !anyActiveTab.url.startsWith("edge://")) {
+    if (anyActiveTab && anyActiveTab.url && !isInternalBrowserUrl(anyActiveTab.url)) {
       lastTargetTabInfo = { id: anyActiveTab.id, url: anyActiveTab.url, title: anyActiveTab.title };
       return anyActiveTab;
     }
 
-    // 4. Fallback: Any open AI chat tab (Kimi, Claude, ChatGPT, DeepSeek, Perplexity, Poe, Mistral, Grok)
-    const target = tabs.find(t => t.url && (
-      t.url.includes("kimi.moonshot.cn") ||
-      t.url.includes("kimi.ai") ||
-      t.url.includes("kimi.com") ||
-      t.url.includes("claude.ai") || 
-      t.url.includes("chatgpt.com") || 
-      t.url.includes("chat.openai.com") ||
-      t.url.includes("deepseek.com") ||
-      t.url.includes("perplexity.ai") ||
-      t.url.includes("poe.com") ||
-      t.url.includes("mistral.ai")
-    ));
-    if (target) {
-      lastTargetTabInfo = { id: target.id, url: target.url, title: target.title };
-      return target;
+    // 4. Any valid non-internal web tab
+    const fallbackTab = tabs.find(t => t.url && !isInternalBrowserUrl(t.url));
+    if (fallbackTab) {
+      lastTargetTabInfo = { id: fallbackTab.id, url: fallbackTab.url, title: fallbackTab.title };
+      return fallbackTab;
     }
   } catch (err) {
     console.error("[Kitsune Relay] Error querying tabs:", err);
@@ -155,7 +163,7 @@ async function handleProbeRequest(probe) {
       round_id: round_id,
       raw_response: "",
       status_code: 404,
-      error_message: "No open target tab detected in Chrome. Please open your AI chat (Kimi, Claude, ChatGPT) in a tab."
+      error_message: "No open target tab detected in Chrome. Please navigate to your AI agent chat interface in a Chrome tab."
     });
     return;
   }
@@ -196,7 +204,7 @@ async function handleProbeRequest(probe) {
             round_id: round_id,
             raw_response: "",
             status_code: 500,
-            error_message: `Content script not active on tab ${targetTab.url}. Please refresh the tab.`
+            error_message: `Content script not ready on tab ${targetTab.url}. Please refresh the tab.`
           });
           return;
         }
