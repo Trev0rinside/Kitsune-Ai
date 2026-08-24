@@ -289,33 +289,46 @@ function isVisible(el) {
 }
 
 function getAssistantMessages() {
-  const selectors = [
-    "div[class*='segment-content']",
-    "div[class*='chat-message']",
-    "div[class*='messageContent']",
-    "div[class*='markdown']",
-    "div[class*='answer']",
-    "div[data-role='assistant']",
-    "div[class*='assistant-message']",
-    ".font-claude-message",
-    "div.standard-markdown",
+  const assistantSelectors = [
+    "[data-message-author-role='assistant']",
     "[data-message-author='assistant']",
-    ".assistant",
-    ".bot-message",
-    ".ai-response",
-    "main article:has(.prose)",
-    ".prose"
+    "[data-role='assistant']",
+    ".font-claude-message",
+    "div[class*='segment-content']",
+    "div[class*='chat-item-content']",
+    "div[class*='markdownContent']",
+    "div[class*='assistant-message']",
+    "div[class*='bot-message']",
+    "div[class*='ai-response']",
+    "div[class*='ds-markdown']",
+    "div[class*='chat-content']",
+    "div[class*='answer']",
+    "div[class*='message-content']",
+    "div[class*='bubble-content']",
+    "div.standard-markdown",
+    "div[class*='markdown']:not([class*='user']):not([class*='human'])",
+    "div[class*='chat-message']:not([class*='user']):not([class*='human'])",
+    ".prose:not([class*='user'])",
+    "div[role='region']:has(p)"
   ];
-  for (const sel of selectors) {
-    const nodes = document.querySelectorAll(sel);
-    if (nodes.length > 0) {
-      return Array.from(nodes);
-    }
+
+  for (const sel of assistantSelectors) {
+    try {
+      const nodes = Array.from(document.querySelectorAll(sel)).filter(node => {
+        if (!isVisible(node)) return false;
+        // Ensure not inside an explicit user turn container
+        const isUserContainer = node.closest("[class*='user'], [data-role='user'], [data-message-author='user'], [data-message-author-role='user'], [class*='human'], [class*='prompt-']");
+        return !isUserContainer;
+      });
+      if (nodes.length > 0) {
+        return nodes;
+      }
+    } catch (e) {}
   }
   return [];
 }
 
-async function waitForResponseStream(initialCount, initialLastText, timeoutMs = 45000) {
+async function waitForResponseStream(initialCount, initialLastText, timeoutMs = 55000) {
   const start = Date.now();
   let lastText = "";
   let stableCycles = 0;

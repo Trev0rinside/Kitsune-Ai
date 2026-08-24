@@ -583,6 +583,7 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
         max_rounds: parseInt(maxRoundsInput.value) || 4,
         attempts_per_round: parseInt(attemptsPerRoundInput.value) || 4,
         confidence_threshold: parseFloat(confThresholdInput.value) || 0.85,
+        timeout_seconds: 60.0,
         models: {
           tester: "deepseek-v4-flash",
           inspectioner: "deepseek-v4-flash",

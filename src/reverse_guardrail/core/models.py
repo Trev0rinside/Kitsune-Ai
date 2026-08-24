@@ -343,7 +343,7 @@ class PipelineConfig(BaseModel):
         description="Max requests per second sent to the Guardrail.",
     )
     timeout_seconds: float = Field(
-        15.0,
+        60.0,
         gt=0.0,
         description="Per-request timeout in seconds.",
     )
