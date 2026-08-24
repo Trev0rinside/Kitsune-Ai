@@ -31,6 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExampleCookieHeader = document.getElementById('btnExampleCookieHeader');
 
   const modeTabs = document.querySelectorAll('.mode-tab');
+  const extensionOptions = document.getElementById('extensionOptions');
+  const extensionStatusDot = document.getElementById('extensionStatusDot');
+  const extensionStatusText = document.getElementById('extensionStatusText');
+  const extensionTargetBadge = document.getElementById('extensionTargetBadge');
   const internalOptions = document.getElementById('internalOptions');
   const internalModelSpec = document.getElementById('internalModelSpec');
   const internalSystemPrompt = document.getElementById('internalSystemPrompt');
@@ -66,9 +70,46 @@ document.addEventListener('DOMContentLoaded', () => {
   const hardenedPromptContent = document.getElementById('hardenedPromptContent');
   const archRecsList = document.getElementById('archRecsList');
 
-  let currentTargetMode = 'internal'; // 'internal' | 'browser' | 'http' | 'mock'
+  let currentTargetMode = 'extension'; // 'extension' | 'internal' | 'browser' | 'http' | 'mock'
   let activeRunId = null;
   let allExtractedFragments = [];
+
+  // --- Poll Extension Relay Status ---
+  async function pollRelayStatus() {
+    try {
+      const res = await fetch('/api/v1/relay/status');
+      if (res.ok) {
+        const data = await res.json();
+        if (extensionStatusDot && extensionStatusText) {
+          if (data.connected) {
+            extensionStatusDot.style.background = '#10b981';
+            extensionStatusDot.style.boxShadow = '0 0 8px rgba(16, 185, 129, 0.9)';
+            extensionStatusText.innerText = 'Stato: Estensione Connessa (Pronta)';
+          } else {
+            extensionStatusDot.style.background = '#ef4444';
+            extensionStatusDot.style.boxShadow = '0 0 6px rgba(239, 68, 68, 0.8)';
+            extensionStatusText.innerText = 'Stato: In attesa di connessione...';
+          }
+        }
+        if (extensionTargetBadge) {
+          if (data.target_tab && data.target_tab.url) {
+            try {
+              const u = new URL(data.target_tab.url);
+              extensionTargetBadge.innerText = '🎯 ' + u.hostname + (u.pathname.length > 1 && u.pathname !== '/' ? u.pathname : '');
+            } catch (e) {
+              extensionTargetBadge.innerText = '🎯 ' + (data.target_tab.title || 'Tab Rilevato');
+            }
+          } else {
+            extensionTargetBadge.innerText = 'Nessun tab Claude/ChatGPT';
+          }
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+  setInterval(pollRelayStatus, 2500);
+  pollRelayStatus();
 
   const DEFAULT_NEXUSTECH_PROMPT = `# NexusTech Enterprise Guardrail System Prompt
 
@@ -119,12 +160,21 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
       tab.classList.add('active');
       currentTargetMode = tab.dataset.mode;
 
-      if (currentTargetMode === 'internal') {
+      if (currentTargetMode === 'extension') {
+        if (extensionOptions) extensionOptions.classList.remove('hidden');
+        if (internalOptions) internalOptions.classList.add('hidden');
+        browserOptions.classList.add('hidden');
+        httpOptions.classList.add('hidden');
+        urlGroup.classList.add('hidden');
+        pollRelayStatus();
+      } else if (currentTargetMode === 'internal') {
+        if (extensionOptions) extensionOptions.classList.add('hidden');
         if (internalOptions) internalOptions.classList.remove('hidden');
         browserOptions.classList.add('hidden');
         httpOptions.classList.add('hidden');
         urlGroup.classList.add('hidden');
       } else if (currentTargetMode === 'browser') {
+        if (extensionOptions) extensionOptions.classList.add('hidden');
         if (internalOptions) internalOptions.classList.add('hidden');
         browserOptions.classList.remove('hidden');
         httpOptions.classList.add('hidden');
@@ -134,12 +184,14 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
           targetUrlInput.value = 'https://claude.ai/new';
         }
       } else if (currentTargetMode === 'http') {
+        if (extensionOptions) extensionOptions.classList.add('hidden');
         if (internalOptions) internalOptions.classList.add('hidden');
         browserOptions.classList.add('hidden');
         httpOptions.classList.remove('hidden');
         urlGroup.classList.remove('hidden');
         targetUrlInput.placeholder = 'http://localhost:8888/api/chat';
       } else if (currentTargetMode === 'mock') {
+        if (extensionOptions) extensionOptions.classList.add('hidden');
         if (internalOptions) internalOptions.classList.add('hidden');
         browserOptions.classList.add('hidden');
         httpOptions.classList.add('hidden');
@@ -239,13 +291,15 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
     const targetConfig = {
       authorized: isAuthorized,
       engagement_id: engagementId,
-      target_name: currentTargetMode === 'internal'
+      target_name: currentTargetMode === 'extension'
+        ? 'Chrome Extension Relay (Claude/ChatGPT)'
+        : currentTargetMode === 'internal'
         ? `Internal Target (${internalModelSpec.value})`
         : currentTargetMode === 'mock' ? 'Mock NexusTech Simulator' : 'Target System SUT',
       target_mode: currentTargetMode,
       target_model: currentTargetMode === 'internal' ? internalModelSpec.value : null,
       internal_system_prompt: currentTargetMode === 'internal' ? (internalSystemPrompt.value.trim() || null) : null,
-      target_url: (currentTargetMode === 'browser' || currentTargetMode === 'http') ? (targetUrlInput.value.trim() || null) : null,
+      target_url: currentTargetMode === 'extension' ? 'https://claude.ai/new' : ((currentTargetMode === 'browser' || currentTargetMode === 'http') ? (targetUrlInput.value.trim() || null) : null),
       use_browser: currentTargetMode === 'browser',
       cookies: currentTargetMode === 'browser' ? (cookiesInput.value.trim() || null) : null,
       input_selector: inputSelectorInput.value.trim() || null,

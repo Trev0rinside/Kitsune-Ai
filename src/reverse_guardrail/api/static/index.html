@@ -73,15 +73,45 @@
       <div class="form-section">
         <label class="section-label">Modalità Target (SUT)</label>
         <div class="mode-tabs">
-          <button type="button" class="mode-tab active" data-mode="internal">🧠 Modello Interno (DeepSeek API)</button>
-          <button type="button" class="mode-tab" data-mode="browser">🌐 Browser-Use (Web UI)</button>
+          <button type="button" class="mode-tab active" data-mode="extension">🦊 Chrome Extension Relay</button>
+          <button type="button" class="mode-tab" data-mode="internal">🧠 Modello Interno (DeepSeek API)</button>
+          <button type="button" class="mode-tab" data-mode="browser">🌐 Browser-Use (Playwright)</button>
           <button type="button" class="mode-tab" data-mode="http">🔌 Endpoint HTTP/REST</button>
           <button type="button" class="mode-tab" data-mode="mock">🧪 Mock Simulator</button>
         </div>
       </div>
 
+      <!-- Extension Relay Mode Options (Zero-Cloudflare Bridge) -->
+      <div id="extensionOptions" class="mode-options">
+        <div class="scope-gate-box" style="border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.05); margin-bottom: 0.75rem;">
+          <div class="scope-gate-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <span id="extensionStatusDot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.8);"></span>
+              <strong id="extensionStatusText">Stato Estensione: In attesa di connessione...</strong>
+            </div>
+            <span class="badge" id="extensionTargetBadge" style="font-size:0.75rem; background: rgba(6, 182, 212, 0.2); color: #38bdf8;">Nessun tab</span>
+          </div>
+          <p class="scope-note" style="margin-bottom: 0;">
+            Le sonde verranno inviate <strong>direttamente all'interno della tua scheda attiva in Google Chrome</strong> (Claude.ai / ChatGPT), con la tua sessione autenticata e <strong>0% blocchi Cloudflare</strong>.
+          </p>
+        </div>
+
+        <details class="advanced-details" open>
+          <summary>📦 Come caricare l'estensione in Chrome (30 secondi)</summary>
+          <div class="details-content">
+            <ol style="padding-left: 1.2rem; font-size: 0.8rem; line-height: 1.6; color: #cbd5e1;">
+              <li>Apri Google Chrome e vai all'indirizzo <code>chrome://extensions</code></li>
+              <li>Attiva la levetta <strong>Modalità sviluppatore</strong> (in alto a destra).</li>
+              <li>Clicca su <strong>Carica estensione non pacchettizzata</strong> (Load unpacked).</li>
+              <li>Seleziona la cartella: <code>/Users/giorgiosensi/Desktop/Kitsune/extension</code></li>
+              <li>Apri <strong>https://claude.ai/new</strong> in una scheda di Chrome e clicca <em>Avvia Assessment</em> qui sotto!</li>
+            </ol>
+          </div>
+        </details>
+      </div>
+
       <!-- Internal LLM Mode Options (Direct API Testing) -->
-      <div id="internalOptions" class="mode-options">
+      <div id="internalOptions" class="mode-options hidden">
         <div class="form-group">
           <label for="internalModelSpec">Modello Sotto Test (LLM Target)</label>
           <select id="internalModelSpec">

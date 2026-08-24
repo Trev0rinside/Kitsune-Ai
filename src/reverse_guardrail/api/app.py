@@ -48,6 +48,23 @@ def create_app() -> FastAPI:
             index_path = os.path.join(static_dir, "index.html")
             return FileResponse(index_path)
 
+    # Mount WebSocket relay endpoint for Chrome Extension
+    from fastapi import WebSocket, WebSocketDisconnect
+    from reverse_guardrail.core.relay_manager import relay_manager
+
+    @app.websocket("/ws/relay")
+    async def websocket_relay_endpoint(websocket: WebSocket):
+        await websocket.accept()
+        await relay_manager.register(websocket)
+        try:
+            while True:
+                data_str = await websocket.receive_text()
+                await relay_manager.handle_incoming_message(data_str)
+        except WebSocketDisconnect:
+            await relay_manager.unregister(websocket)
+        except Exception:
+            await relay_manager.unregister(websocket)
+
     app.include_router(router)
     return app
 

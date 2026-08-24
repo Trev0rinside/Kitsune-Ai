@@ -39,6 +39,12 @@ class PipelineRunner:
 
         if target is not None:
             self.target = target
+        elif self.config.target.target_mode == "extension":
+            from reverse_guardrail.guardrail.extension_relay_target import ExtensionRelayGuardrailTarget
+            self.target = ExtensionRelayGuardrailTarget(
+                scope_config=self.config.target,
+                timeout_seconds=self.config.timeout_seconds,
+            )
         elif self.config.target.target_mode == "internal" or (
             not self.config.target.target_url
             and not self.config.target.use_browser

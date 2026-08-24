@@ -157,6 +157,29 @@ GEMINI_API_KEY=your-google-gemini-api-key
 
 ---
 
+## 🦊 Kitsune Chrome Extension Relay (100% Zero-Cloudflare Bypass)
+
+To perform security assessments on heavily protected Web AI interfaces (**Claude.ai**, **ChatGPT**, OpenAI Chat) without encountering Cloudflare Turnstile blocks, Kitsune includes a native **Manifest V3 Chrome Extension Relay**.
+
+### Why it works:
+Instead of running an external automated browser (which leaks CDP flags and TLS JA3 fingerprints), the extension operates **inside your authentic, human-authenticated Google Chrome browser**. The Kitsune engine sends injection probes over a local WebSocket (`ws://127.0.0.1:8888/ws/relay`) and the extension types them naturally into the open chat tab and streams the responses back.
+
+```mermaid
+flowchart LR
+    KITSUNE["🦊 Kitsune Engine<br/>(FastAPI / Python)"] <-->|"⚡ Local WebSocket<br/>ws://127.0.0.1:8888/ws/relay"| EXT["🧩 Chrome Extension<br/>(Service Worker)"]
+    EXT <-->|"📜 Content Script<br/>ProseMirror DOM"| CLAUDE[("💬 Claude.ai / ChatGPT<br/>(Authentic Session)")]
+```
+
+### Quick 30-Second Setup:
+1. Open Google Chrome and navigate to `chrome://extensions`.
+2. Enable **Developer mode** (top-right toggle).
+3. Click **Load unpacked** (*Carica estensione non pacchettizzata*).
+4. Select the directory: `Kitsune/extension`.
+5. Open a chat tab in Chrome (e.g. `https://claude.ai/new`).
+6. In the Kitsune Dashboard, select **🦊 Chrome Extension Relay** and start the assessment!
+
+---
+
 ## 🖥️ Web Dashboard Usage
 
 Start the integrated web dashboard and REST API service:
@@ -166,26 +189,12 @@ uv run uvicorn reverse_guardrail.api.app:app --host 127.0.0.1 --port 8888 --relo
 
 Open your browser at: **`http://localhost:8888/`**
 
-> [!TIP]
-> ### 💡 Best Practice for Web UI Chatbot Testing (Claude.ai, ChatGPT & Cloudflare Bypass)
-> When testing Web UI chatbots using your **Real Google Chrome Profile** (to preserve login sessions and bypass Cloudflare):
-> 1. Open the Kitsune Dashboard (`http://localhost:8888/`) in a **secondary browser** (e.g. **Firefox**, **Safari**, or **Arc**).
-> 2. Ensure **Google Chrome is closed** (`Cmd + Q` on macOS) so its profile directory is not locked by an active process.
-> 3. In the Kitsune Dashboard, select the **🌐 Browser-Use (Web UI)** tab, pick your Chrome profile (e.g. `Profile 6`), and click **🚀 Avvia Reverse-Guardrail Assessment**.
-> 4. Kitsune will launch your actual Google Chrome with your full authenticated session without any profile locking conflicts.
-
-### Dashboard Features:
-1. **Target Selector**: Switch between 🧠 **Modello Interno (DeepSeek API)**, 🌐 **Browser-Use (Web UI)**, 🔌 **Endpoint HTTP/REST**, or 🧪 **Mock Simulator**.
-2. **Real Chrome Profile Support**: Select your local Chrome profile to test pre-authenticated sessions on Claude.ai, ChatGPT, or custom web portals with Cloudflare anti-bot stealth.
-3. **Session Cookie Pre-Authentication**: Optional manual cookie injection (JSON or header string) for headless testing.
-4. **Live Metrics Bar**: Monitor real-time status, rounds, reconstruction confidence, and leaked fragment counts.
-5. **Interactive Tabs**:
-   - **📝 System Prompt Ricostruito**: Synthesized prompt with quick-copy button.
-   - **📊 Sezioni & Gaps**: Section-by-section breakdown with confidence ratings.
-   - **🔍 Frammenti Estratti**: Filterable table of leaked atomic tokens and strategies.
-   - **🔓 Vulnerability Assessment**: Robustness scores (Delimiter Isolation, Ambiguity Index, Secret Risk) and OWASP vulnerability cards.
-   - **🛡️ Hardening & Remediation**: Before/After diff panels, executive summary, full hardened prompt, and architectural defense recommendations.
-   - **📜 Console & Audit Trail**: Real-time log stream of all engine interactions.
+### Dashboard Modes:
+1. **🦊 Chrome Extension Relay (Recommended for Web)**: Real-time WebSocket bridge directly into your authentic Chrome session on Claude.ai / ChatGPT with 0% Cloudflare detection.
+2. **🧠 Modello Interno (DeepSeek API)**: Direct API testing against LLMs (DeepSeek-v4-Flash, Ollama, custom system prompts).
+3. **🌐 Browser-Use (Playwright)**: Standalone Playwright automation with persistent profile loading.
+4. **🔌 Endpoint HTTP/REST**: Target any custom OpenAI-compatible API or HTTP webhook with optional API Bearer token.
+5. **🧪 Mock Simulator**: Built-in deterministic benchmark against NexusTech enterprise ground-truth.
 
 ---
 

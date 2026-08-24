@@ -14,6 +14,8 @@ from reverse_guardrail.core.scope_guard import ScopeAuthorizationError, ScopeAut
 from reverse_guardrail.orchestrator.runner import PipelineRunner
 from reverse_guardrail.storage.sqlite_store import SQLiteGraphVectorStore
 
+from reverse_guardrail.core.relay_manager import relay_manager
+
 router = APIRouter(prefix="/api/v1", tags=["Reverse Guardrail"])
 
 # In-memory registry of active runners for the service layer
@@ -40,6 +42,12 @@ class PipelineStatusResponse(BaseModel):
 async def health_check() -> Dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy", "service": "reverse-guardrail"}
+
+
+@router.get("/relay/status")
+async def get_relay_status() -> Dict[str, Any]:
+    """Get connection and target tab status of the Chrome Extension Relay."""
+    return relay_manager.get_status()
 
 
 @router.get("/audit/logs", response_model=List[AuditLogEntry])
