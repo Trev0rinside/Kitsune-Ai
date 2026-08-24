@@ -96,6 +96,7 @@ class PipelineRunner:
     async def initialize(self) -> PipelineState:
         """Initialize DB store and initial state."""
         await self.store.initialize()
+        await self.store.clear()
         run_id = f"RUN-{uuid4().hex[:8].upper()}"
         self.state = PipelineState(
             run_id=run_id,
