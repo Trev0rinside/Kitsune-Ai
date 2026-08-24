@@ -47,7 +47,7 @@ async function executeProbe(payload, attemptId) {
   console.log("[Kitsune Relay] Probe submitted. Waiting for assistant response to stream...");
 
   // 4. Wait for and extract the streamed response
-  const rawResponse = await waitForResponseStream(initialMessageCount, initialLastMessageText, 45000);
+  const rawResponse = await waitForResponseStream(initialMessageCount, initialLastMessageText, 175000);
   const latencyMs = Math.round(performance.now() - startTime);
 
   const refusalKeywords = [
@@ -288,6 +288,55 @@ function isVisible(el) {
   return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
 }
 
+function isGeneratingActive() {
+  // 1. Check for Stop / Cancel / Pause buttons (universal across Qwen, Claude, ChatGPT, DeepSeek, etc.)
+  const stopSelectors = [
+    "button[aria-label*='Stop' i]",
+    "button[aria-label*='Interrompi' i]",
+    "button[aria-label*='停止' i]",
+    "button[aria-label*='Cancel' i]",
+    "button[data-testid*='stop' i]",
+    "button[data-testid*='interrupt' i]",
+    "button[class*='stop' i]",
+    "div[class*='stop-btn']",
+    "div[class*='stopButton']",
+    "div[class*='btn-stop']",
+    "button:has(svg rect)",
+    "button:has(.lucide-square)"
+  ];
+  for (const sel of stopSelectors) {
+    try {
+      const el = document.querySelector(sel);
+      if (el && isVisible(el)) return true;
+    } catch(e) {}
+  }
+
+  // 2. Check for Thinking / Reasoning / Loading spinners (Qwen QwQ / DeepSeek R1 / thinking blocks)
+  const thinkingSelectors = [
+    "div[class*='thinking']",
+    "div[class*='thought']",
+    "div[class*='reasoning']",
+    "div[class*='loading']",
+    "div[class*='spinner']",
+    "div[class*='ant-spin']",
+    "div[class*='skeleton']",
+    "div[class*='streaming']",
+    "span[class*='typing']",
+    "span[class*='cursor']",
+    ".animate-spin",
+    ".animate-pulse",
+    "[aria-busy='true']"
+  ];
+  for (const sel of thinkingSelectors) {
+    try {
+      const el = document.querySelector(sel);
+      if (el && isVisible(el)) return true;
+    } catch(e) {}
+  }
+
+  return false;
+}
+
 function getAssistantMessages() {
   const assistantSelectors = [
     "[data-message-author-role='assistant']",
@@ -328,50 +377,79 @@ function getAssistantMessages() {
   return [];
 }
 
-async function waitForResponseStream(initialCount, initialLastText, timeoutMs = 55000) {
+async function waitForResponseStream(initialCount, initialLastText, timeoutMs = 175000) {
   const start = Date.now();
   let lastText = "";
+  let lastMutationTime = Date.now();
   let stableCycles = 0;
 
-  // Wait a moment for generation to initiate
-  await sleep(1500);
+  // 1. Setup DOM MutationObserver to track active token streaming & layout changes
+  const observer = new MutationObserver(() => {
+    lastMutationTime = Date.now();
+  });
+  try {
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  } catch (e) {
+    console.warn("[Kitsune Relay] MutationObserver attach error:", e);
+  }
 
-  while (Date.now() - start < timeoutMs) {
-    const messages = getAssistantMessages();
-    
-    if (messages.length > initialCount || (messages.length > 0 && initialCount === 0)) {
-      const latestMsg = messages[messages.length - 1];
-      const currentText = (latestMsg.innerText || latestMsg.textContent || "").trim();
+  // 2. Wait an initial short period for network dispatch & UI state change
+  await sleep(2000);
 
-      // Ensure it's not identical to the previous message before this probe
-      if (currentText.length > 0 && currentText !== initialLastText) {
+  try {
+    while (Date.now() - start < timeoutMs) {
+      const active = isGeneratingActive();
+      const messages = getAssistantMessages();
+      const timeSinceLastMutation = Date.now() - lastMutationTime;
+
+      let currentText = "";
+      let hasNewContent = false;
+
+      if (messages.length > initialCount || (messages.length > 0 && initialCount === 0)) {
+        const latestMsg = messages[messages.length - 1];
+        currentText = (latestMsg.innerText || latestMsg.textContent || "").trim();
+        if (currentText.length > 0 && currentText !== initialLastText) {
+          hasNewContent = true;
+        }
+      } else if (messages.length > 0 && messages.length === initialCount) {
+        const latestMsg = messages[messages.length - 1];
+        currentText = (latestMsg.innerText || latestMsg.textContent || "").trim();
+        if (currentText.length > initialLastText.length + 10) {
+          hasNewContent = true;
+        }
+      }
+
+      // Check for stream completion:
+      // Condition 1: We have captured new content
+      // Condition 2: The model is NOT currently marked as generating/thinking (no Stop button / no spinner)
+      // Condition 3: No DOM mutations for at least 2.5 seconds (stream fully drained and settled)
+      // Condition 4: Text content has stabilized
+      if (hasNewContent && !active) {
         if (currentText === lastText) {
           stableCycles++;
-          // When text stabilizes for 3 cycles (~2.4s) and has meaningful content, streaming is done
-          if (stableCycles >= 3 && currentText.length > 5) {
+          if (stableCycles >= 3 && timeSinceLastMutation >= 2500) {
+            console.log(`[Kitsune Relay] Generation settled via DOM state machine & MutationObserver (${currentText.length} chars)`);
             return currentText;
           }
         } else {
           lastText = currentText;
           stableCycles = 0;
         }
-      }
-    } else if (messages.length > 0 && messages.length === initialCount) {
-      // Check if last message expanded in length
-      const latestMsg = messages[messages.length - 1];
-      const currentText = (latestMsg.innerText || latestMsg.textContent || "").trim();
-      if (currentText.length > initialLastText.length + 10) {
-        if (currentText === lastText) {
-          stableCycles++;
-          if (stableCycles >= 3) return currentText;
-        } else {
+      } else {
+        if (hasNewContent) {
           lastText = currentText;
-          stableCycles = 0;
         }
+        stableCycles = 0;
       }
-    }
 
-    await sleep(800);
+      await sleep(800);
+    }
+  } finally {
+    try { observer.disconnect(); } catch(e) {}
   }
 
   return lastText || "No response text captured within timeout.";

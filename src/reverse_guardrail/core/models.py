@@ -343,9 +343,9 @@ class PipelineConfig(BaseModel):
         description="Max requests per second sent to the Guardrail.",
     )
     timeout_seconds: float = Field(
-        60.0,
+        180.0,
         gt=0.0,
-        description="Per-request timeout in seconds.",
+        description="Per-request timeout in seconds (supports long reasoning / slow thinking models).",
     )
     models: Dict[str, str] = Field(
         default_factory=lambda: {
