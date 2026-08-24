@@ -178,6 +178,8 @@ flowchart LR
 5. Open a chat tab in Chrome (e.g. `https://claude.ai/new`).
 6. In the Kitsune Dashboard, select **🦊 Chrome Extension Relay** and start the assessment!
 
+👉 *For full technical details, see the [Chrome Extension Relay Guide](docs/CHROME_EXTENSION_RELAY_GUIDE.md).*
+
 ---
 
 ## 🖥️ Web Dashboard Usage
