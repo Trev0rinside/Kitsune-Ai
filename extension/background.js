@@ -10,6 +10,17 @@ let isConnected = false;
 let reconnectTimer = null;
 let lastTargetTabInfo = null;
 
+// Relay telemetry surfaced in the popup: how much work this link has actually done.
+const relayStats = {
+  probes: 0,
+  refusals: 0,
+  lastRound: null,
+  lastLatencyMs: null,
+  lastAt: null,
+  lastError: null,
+  busy: false
+};
+
 // --- Initialize WebSocket Connection ---
 function connectWebSocket() {
   if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
@@ -25,7 +36,7 @@ function connectWebSocket() {
       isConnected = true;
       console.log("[Kitsune Relay] Connected to Kitsune engine!");
       chrome.action.setBadgeText({ text: "ON" });
-      chrome.action.setBadgeBackgroundColor({ color: "#10b981" });
+      chrome.action.setBadgeBackgroundColor({ color: "#C9A227" });
 
       // Send initial handshake with active tab info
       const activeTab = await findTargetTab();
@@ -56,7 +67,7 @@ function connectWebSocket() {
       isConnected = false;
       console.warn("[Kitsune Relay] WebSocket disconnected. Reconnecting in 3s...");
       chrome.action.setBadgeText({ text: "OFF" });
-      chrome.action.setBadgeBackgroundColor({ color: "#ef4444" });
+      chrome.action.setBadgeBackgroundColor({ color: "#B33420" });
       scheduleReconnect();
     };
 
@@ -153,10 +164,14 @@ async function findTargetTab(requestedTargetUrl = null) {
 // --- Handle Probe Request from Kitsune Engine ---
 async function handleProbeRequest(probe) {
   const { attempt_id, round_id, payload, target_url } = probe;
+  relayStats.busy = true;
+  relayStats.lastRound = round_id;
+  chrome.action.setBadgeText({ text: "..." });
   const targetTab = await findTargetTab(target_url);
 
   if (!targetTab) {
     console.error("[Kitsune Relay] No target tab found to execute probe!");
+    markProbeFinished("No open target tab detected in Chrome.");
     sendWsMessage({
       type: "PROBE_RESPONSE",
       attempt_id: attempt_id,
@@ -198,6 +213,7 @@ async function handleProbeRequest(probe) {
             }
           }
 
+          markProbeFinished(`Content script not ready on tab ${targetTab.url}.`);
           sendWsMessage({
             type: "PROBE_RESPONSE",
             attempt_id: attempt_id,
@@ -210,6 +226,10 @@ async function handleProbeRequest(probe) {
         }
 
         console.log(`[Kitsune Relay] Probe ${attempt_id} completed successfully from tab!`);
+        relayStats.probes += 1;
+        relayStats.lastLatencyMs = response ? Math.round(response.latency_ms || 0) : null;
+        if (response && response.refused) relayStats.refusals += 1;
+        markProbeFinished(null);
         sendWsMessage({
           type: "PROBE_RESPONSE",
           attempt_id: attempt_id,
@@ -226,6 +246,14 @@ async function handleProbeRequest(probe) {
   sendToContentScript(true);
 }
 
+// --- Probe Telemetry ---
+function markProbeFinished(errorMessage) {
+  relayStats.busy = false;
+  relayStats.lastAt = Date.now();
+  relayStats.lastError = errorMessage;
+  chrome.action.setBadgeText({ text: isConnected ? "ON" : "OFF" });
+}
+
 // --- Listen to Messages from Extension Popup ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "GET_STATUS") {
@@ -233,7 +261,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({
         connected: isConnected,
         wsUrl: WS_URL,
-        targetTab: tab ? { id: tab.id, url: tab.url, title: tab.title } : null
+        targetTab: tab ? { id: tab.id, url: tab.url, title: tab.title } : null,
+        stats: { ...relayStats }
       });
     });
     return true; // async sendResponse

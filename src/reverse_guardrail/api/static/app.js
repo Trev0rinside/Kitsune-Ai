@@ -24,6 +24,7 @@ const I18N = {
     extensionWaiting: "Extension Status: Waiting for connection...",
     extensionReady: "Extension Status: Connected (Ready)",
     noActiveTab: "No active tab",
+    nodeVessel: "vessel",
     extensionDescription: "Probes are dispatched directly inside your active Google Chrome tab or custom enterprise agent portal, utilizing your authentic session with 0% bot/turnstile blocks.",
     howToLoadExtSummary: "📦 How to load extension in Chrome (30 seconds)",
     step1Ext: "Open Google Chrome and navigate to chrome://extensions",
@@ -121,6 +122,7 @@ const I18N = {
     extensionWaiting: "Stato Estensione: In attesa di connessione...",
     extensionReady: "Stato Estensione: Connessa (Pronta)",
     noActiveTab: "Nessun tab attivo",
+    nodeVessel: "ospite",
     extensionDescription: "Le sonde vengono inviate direttamente all'interno della scheda attiva in Google Chrome o portale aziendale personalizzato, con la tua sessione autenticata e 0% blocchi bot/turnstile.",
     howToLoadExtSummary: "📦 Come caricare l'estensione in Chrome (30 secondi)",
     step1Ext: "Apri Google Chrome e vai all'indirizzo chrome://extensions",
@@ -324,15 +326,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         const dict = I18N[currentLang] || I18N.en;
 
+        const relayConsole = document.getElementById('relayConsole');
         if (extensionStatusDot && extensionStatusText) {
           if (data.connected) {
-            extensionStatusDot.style.background = '#10b981';
-            extensionStatusDot.style.boxShadow = '0 0 8px rgba(16, 185, 129, 0.9)';
+            // Foxfire lit: the possession link is live.
+            extensionStatusDot.style.background = '#FFC46B';
+            extensionStatusDot.style.boxShadow = '0 0 10px 1px rgba(255, 196, 107, 0.85)';
             extensionStatusText.innerText = dict.extensionReady;
+            if (relayConsole) relayConsole.classList.add('is-linked');
           } else {
-            extensionStatusDot.style.background = '#ef4444';
-            extensionStatusDot.style.boxShadow = '0 0 6px rgba(239, 68, 68, 0.8)';
+            extensionStatusDot.style.background = '#66748C';
+            extensionStatusDot.style.boxShadow = 'none';
             extensionStatusText.innerText = dict.extensionWaiting;
+            if (relayConsole) relayConsole.classList.remove('is-linked');
           }
         }
         if (extensionTargetBadge) {
@@ -603,6 +609,7 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
     }
     metricStatus.className = 'metric-value status-running';
     metricStatus.innerText = 'RUNNING';
+    document.body.classList.add('is-running');
 
     appendLog(`[Pipeline] Launching Reverse-Guardrail in ${currentTargetMode.toUpperCase()} mode...`, 'info');
 
@@ -639,6 +646,7 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
     } finally {
       btnLaunch.disabled = false;
       btnLaunchText.innerText = dict.btnLaunchAssessment;
+      document.body.classList.remove('is-running');
       if (btnStop) {
         btnStop.classList.add('hidden');
       }
@@ -663,6 +671,7 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
       } catch (err) {
         appendLog(`[Pipeline] Stop error: ${err.message}`, 'error');
       } finally {
+        document.body.classList.remove('is-running');
         btnStop.classList.add('hidden');
         btnLaunch.disabled = false;
         btnLaunchText.innerText = dict.btnLaunchAssessment;
@@ -783,7 +792,7 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
           <div class="remediation-card">
             <div class="remediation-title">
               <span>Section: <strong>${escapeHtml(r.section_name)}</strong></span>
-              <span class="badge" style="background: rgba(16,185,129,0.2); color:#10b981;">HARDENED</span>
+              <span class="badge badge-hardened">HARDENED</span>
             </div>
             <div class="diff-grid">
               <div class="diff-box diff-original">

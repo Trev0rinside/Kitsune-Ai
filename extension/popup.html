@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,48 +7,91 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="popup-container">
-    <!-- Header -->
+  <!-- The relay popup is an ofuda: a paper seal that binds the fox to a tab. -->
+  <div class="ofuda" id="relayCard">
+    <span class="shide" aria-hidden="true"></span>
+
     <header class="header">
-      <div class="brand">
-        <img src="icons/icon-48.png" class="brand-logo" alt="Kitsune" width="32" height="32">
-        <div class="title-group">
-          <h1>KITSUNE</h1>
-          <span class="subtitle">Guardrail Relay</span>
-        </div>
-      </div>
-      <div class="status-indicator" id="connectionPill">
-        <span class="status-dot" id="statusDot"></span>
-        <span class="status-text" id="statusText">Checking...</span>
+      <svg class="mask-crest" viewBox="0 0 64 72" role="img" aria-label="Kitsune mask">
+        <path class="mask-ear" d="M7 4 L22 23 L4 29 Z"/>
+        <path class="mask-ear" d="M57 4 L42 23 L60 29 Z"/>
+        <path class="mask-face" d="M32 69 C15 60 3.5 44 6 25 C18 18.5 46 18.5 58 25 C60.5 44 49 60 32 69 Z"/>
+        <path class="mask-kuma" d="M13 27 L27 24 L25 29 L13 31 Z"/>
+        <path class="mask-kuma" d="M51 27 L37 24 L39 29 L51 31 Z"/>
+        <path class="mask-kuma" d="M28 12 L32 3 L36 12 L32 9 Z"/>
+        <path class="mask-eye" d="M16 38 L28 34 L26 42 L16 43 Z"/>
+        <path class="mask-eye" d="M48 38 L36 34 L38 42 L48 43 Z"/>
+        <path class="mask-snout" d="M32 50 L38 56 L32 61 L26 56 Z"/>
+      </svg>
+      <div class="title-group">
+        <h1>KITSUNE<span class="kanji">狐</span></h1>
+        <span class="subtitle">Guardrail Relay</span>
       </div>
     </header>
 
-    <!-- Main Card -->
-    <div class="card">
-      <div class="card-row">
-        <span class="card-label">WebSocket Engine:</span>
-        <span class="card-value" id="wsEndpoint">ws://127.0.0.1:8888</span>
+    <!-- State seal -->
+    <div class="seal">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="status-text" id="statusText">Checking…</span>
+    </div>
+
+    <!-- The link, drawn end to end -->
+    <div class="chain">
+      <div class="node">
+        <span class="node-glyph">⌬</span>
+        <span class="node-name">Engine</span>
       </div>
-      <div class="card-row">
-        <span class="card-label">Target Detected:</span>
-        <span class="card-value target-badge" id="targetTabUrl">No active tab</span>
+      <div class="wire"><span class="spark"></span></div>
+      <div class="node">
+        <span class="node-glyph">狐</span>
+        <span class="node-name">Relay</span>
+      </div>
+      <div class="wire"><span class="spark"></span></div>
+      <div class="node node-vessel">
+        <span class="node-glyph">▢</span>
+        <span class="node-name">Tab</span>
       </div>
     </div>
 
-    <!-- Quick Instructions -->
-    <div class="info-box">
-      <div class="info-title">💡 How to Use</div>
-      <ol class="info-list">
-        <li>Open your target AI chat interface or custom enterprise agent portal in a Chrome tab.</li>
-        <li>Open Kitsune Dashboard at <strong>http://localhost:8888</strong>.</li>
-        <li>Select <strong>🦊 Chrome Extension Relay</strong> and click Launch Assessment!</li>
-      </ol>
+    <!-- Vessel -->
+    <div class="vessel">
+      <span class="vessel-label">Bound tab</span>
+      <span class="vessel-url" id="targetTabUrl">No active tab</span>
     </div>
 
-    <!-- Footer -->
+    <!-- Telemetry -->
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-val" id="statProbes">0</span>
+        <span class="stat-label">Probes</span>
+      </div>
+      <div class="stat">
+        <span class="stat-val" id="statRefusals">0</span>
+        <span class="stat-label">Refusals</span>
+      </div>
+      <div class="stat">
+        <span class="stat-val" id="statLatency">—</span>
+        <span class="stat-label">Last latency</span>
+      </div>
+    </div>
+
+    <div class="wire-meta">
+      <span class="meta-key">socket</span>
+      <span class="meta-val" id="wsEndpoint">ws://127.0.0.1:8888</span>
+    </div>
+    <div class="wire-meta">
+      <span class="meta-key">last probe</span>
+      <span class="meta-val" id="lastSeen">never</span>
+    </div>
+
+    <p class="notice" id="noticeText">
+      Open the target chat in a Chrome tab, then start the assessment from the Kitsune dashboard at
+      <strong>localhost:8888</strong>.
+    </p>
+
     <footer class="footer">
-      <span class="version">v1.0.0 — Zero-Cloudflare Relay</span>
-      <button class="btn-refresh" id="btnRefresh">🔄 Refresh Status</button>
+      <span class="version">v1.0.0 · zero-turnstile relay</span>
+      <button class="btn-refresh" id="btnRefresh">Refresh</button>
     </footer>
   </div>
 

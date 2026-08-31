@@ -3,34 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kitsune 🦊 | Reverse-Guardrail LLM Security Assessment Dashboard</title>
+  <title>Kitsune 狐 | Reverse-Guardrail</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="/static/kitsune_logo.png">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <!-- Background Glow FX -->
-  <div class="bg-glow bg-glow-1"></div>
-  <div class="bg-glow bg-glow-2"></div>
+  <!-- Ambient: lantern light + drifting foxfire -->
+  <div class="atmosphere" aria-hidden="true">
+    <span class="lantern lantern-a"></span>
+    <span class="lantern lantern-b"></span>
+    <span class="foxfire foxfire-1"></span>
+    <span class="foxfire foxfire-2"></span>
+    <span class="foxfire foxfire-3"></span>
+  </div>
 
-  <!-- Header -->
+  <!-- ── Header ─────────────────────────────────────────────── -->
   <header class="app-header">
     <div class="header-left">
       <div class="brand-badge">
-        <img src="/static/kitsune_logo.png" alt="Kitsune Logo" class="brand-logo-img">
+        <svg class="mask-crest" viewBox="0 0 64 72" role="img" aria-label="Kitsune mask">
+          <path class="mask-ear" d="M7 4 L22 23 L4 29 Z"/>
+          <path class="mask-ear" d="M57 4 L42 23 L60 29 Z"/>
+          <path class="mask-face" d="M32 69 C15 60 3.5 44 6 25 C18 18.5 46 18.5 58 25 C60.5 44 49 60 32 69 Z"/>
+          <path class="mask-kuma" d="M13 27 L27 24 L25 29 L13 31 Z"/>
+          <path class="mask-kuma" d="M51 27 L37 24 L39 29 L51 31 Z"/>
+          <path class="mask-kuma mask-brow" d="M28 12 L32 3 L36 12 L32 9 Z"/>
+          <path class="mask-eye" d="M16 38 L28 34 L26 42 L16 43 Z"/>
+          <path class="mask-eye" d="M48 38 L36 34 L38 42 L48 43 Z"/>
+          <path class="mask-snout" d="M32 50 L38 56 L32 61 L26 56 Z"/>
+        </svg>
         <div class="brand-info">
-          <h1>KITSUNE <span class="brand-sub">REVERSE-GUARDRAIL</span></h1>
-          <span class="subtitle" data-i18n="appSubtitle">System Prompt Leakage & Soft-Injection Testing Engine</span>
+          <h1>KITSUNE<span class="brand-kanji">狐</span></h1>
+          <span class="brand-sub">REVERSE-GUARDRAIL</span>
+          <span class="subtitle" data-i18n="appSubtitle">System Prompt Leakage &amp; Soft-Injection Testing Engine</span>
         </div>
       </div>
     </div>
+
     <div class="header-right">
-      <!-- Language Switcher -->
       <div class="lang-switch-container">
         <button type="button" class="lang-btn active" id="langEnBtn" data-lang="en">EN</button>
-        <span class="lang-divider">|</span>
+        <span class="lang-divider"></span>
         <button type="button" class="lang-btn" id="langItBtn" data-lang="it">IT</button>
       </div>
 
@@ -38,35 +54,39 @@
         <span class="status-dot"></span>
         <span id="apiStatusText" data-i18n="apiOnline">API Online</span>
       </div>
+
       <div class="model-badge">
-        <span class="model-tag">LLM: DeepSeek-v4-Flash</span>
-        <span class="model-tag">Embed: Gemini-001</span>
+        <span class="model-tag"><em>llm</em> DeepSeek-v4-Flash</span>
+        <span class="model-tag"><em>embed</em> Gemini-001</span>
       </div>
     </div>
   </header>
 
-  <!-- Main Grid Layout -->
+  <!-- ── Cockpit ────────────────────────────────────────────── -->
   <main class="main-container">
-    <!-- Left Panel: Configuration & Target Setup -->
+
+    <!-- Left: engagement rig -->
     <section class="panel config-panel">
+      <span class="rail-label" aria-hidden="true">設定 · ENGAGEMENT RIG</span>
+
       <div class="panel-header">
-        <h2 data-i18n="targetConfigTitle">🎯 Target & Scope Configuration</h2>
+        <h2 data-i18n="targetConfigTitle">🎯 Target &amp; Scope Configuration</h2>
         <span class="badge badge-scope" id="scopeGateBadge" data-i18n="killswitchArmed">Kill-Switch Armed</span>
       </div>
 
-      <!-- Scope Gate (Mandatory Kill-switch) -->
-      <div class="scope-gate-box">
+      <!-- Scope gate: the ofuda seal that permits the run -->
+      <div class="scope-gate-box ofuda">
         <div class="scope-gate-title">
-          <span class="alert-icon">⚠️</span>
-          <strong data-i18n="rulesOfEngagement">Rules of Engagement & Scope Gate</strong>
+          <span class="alert-icon">封</span>
+          <strong data-i18n="rulesOfEngagement">Rules of Engagement &amp; Scope Gate</strong>
         </div>
         <p class="scope-note" data-i18n="scopeNote">Assessment executes strictly upon explicit authorization and verified tracking engagement ID.</p>
-        
+
         <div class="form-group checkbox-group">
           <label class="custom-checkbox">
             <input type="checkbox" id="authCheckbox" checked>
             <span class="checkmark"></span>
-            <span class="checkbox-label"><strong data-i18n="targetAuthLabel">target.authorized: true</strong> (<span data-i18n="authConfirmed">Formal authorization confirmed</span>)</span>
+            <span class="checkbox-label"><strong data-i18n="targetAuthLabel">target.authorized: true</strong> <span class="checkbox-note">(<span data-i18n="authConfirmed">Formal authorization confirmed</span>)</span></span>
           </label>
         </div>
 
@@ -76,7 +96,7 @@
         </div>
       </div>
 
-      <!-- Target Mode Switcher -->
+      <!-- Target mode -->
       <div class="form-section">
         <label class="section-label" data-i18n="targetModeLabel">Target System Mode (SUT)</label>
         <div class="mode-tabs">
@@ -88,17 +108,47 @@
         </div>
       </div>
 
-      <!-- Extension Relay Mode Options (Zero-Cloudflare Bridge) -->
+      <!-- ══ Extension Relay: the possession link ══ -->
       <div id="extensionOptions" class="mode-options">
-        <div class="scope-gate-box" style="border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.05); margin-bottom: 0.75rem;">
-          <div class="scope-gate-title" style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 0.4rem;">
-              <span id="extensionStatusDot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.8);"></span>
-              <strong id="extensionStatusText" data-i18n="extensionWaiting">Extension Status: Waiting for connection...</strong>
-            </div>
-            <span class="badge" id="extensionTargetBadge" style="font-size:0.75rem; background: rgba(6, 182, 212, 0.2); color: #38bdf8;" data-i18n="noActiveTab">No active tab</span>
+        <div class="relay-console" id="relayConsole">
+          <div class="relay-console-head">
+            <span class="relay-eyebrow">憑依 · POSSESSION LINK</span>
+            <span class="badge relay-target" id="extensionTargetBadge" data-i18n="noActiveTab">No active tab</span>
           </div>
-          <p class="scope-note" style="margin-bottom: 0;" data-i18n="extensionDescription">
+
+          <!-- Signature: the live relay chain, engine → socket → extension → tab -->
+          <div class="relay-chain">
+            <div class="chain-node">
+              <span class="node-glyph">⌬</span>
+              <span class="node-name">Engine</span>
+              <span class="node-meta">:8888</span>
+            </div>
+            <div class="chain-wire"><span class="wire-spark"></span></div>
+            <div class="chain-node">
+              <span class="node-glyph">≋</span>
+              <span class="node-name">Socket</span>
+              <span class="node-meta">/ws/relay</span>
+            </div>
+            <div class="chain-wire"><span class="wire-spark"></span></div>
+            <div class="chain-node">
+              <span class="node-glyph">狐</span>
+              <span class="node-name">Extension</span>
+              <span class="node-meta">MV3</span>
+            </div>
+            <div class="chain-wire"><span class="wire-spark"></span></div>
+            <div class="chain-node chain-node-vessel">
+              <span class="node-glyph">▢</span>
+              <span class="node-name">Chrome tab</span>
+              <span class="node-meta" data-i18n="nodeVessel">vessel</span>
+            </div>
+          </div>
+
+          <div class="relay-status">
+            <span class="status-dot" id="extensionStatusDot"></span>
+            <strong id="extensionStatusText" data-i18n="extensionWaiting">Extension Status: Waiting for connection...</strong>
+          </div>
+
+          <p class="scope-note relay-note" data-i18n="extensionDescription">
             Probes are dispatched <strong>directly inside your active Google Chrome tab</strong> (Claude.ai / ChatGPT), utilizing your authenticated session with <strong>0% Cloudflare Turnstile blocks</strong>.
           </p>
         </div>
@@ -106,7 +156,7 @@
         <details class="advanced-details" open>
           <summary data-i18n="howToLoadExtSummary">📦 How to load extension in Chrome (30 seconds)</summary>
           <div class="details-content">
-            <ol style="padding-left: 1.2rem; font-size: 0.8rem; line-height: 1.6; color: #cbd5e1;">
+            <ol class="rite-steps">
               <li data-i18n="step1Ext">Open Google Chrome and navigate to <code>chrome://extensions</code></li>
               <li data-i18n="step2Ext">Enable <strong>Developer mode</strong> toggle (top right corner).</li>
               <li data-i18n="step3Ext">Click <strong>Load unpacked</strong> (Carica estensione non pacchettizzata).</li>
@@ -117,7 +167,7 @@
         </details>
       </div>
 
-      <!-- Internal LLM Mode Options (Direct API Testing) -->
+      <!-- Internal LLM -->
       <div id="internalOptions" class="mode-options hidden">
         <div class="form-group">
           <label for="internalModelSpec" data-i18n="internalModelLabel">Target Model (LLM Under Test)</label>
@@ -143,13 +193,12 @@
         <input type="url" id="targetUrl" value="https://claude.ai/new" placeholder="https://claude.ai/new or http://localhost:8000/api/chat">
       </div>
 
-      <!-- Browser Mode Options (Chrome Profile, Cloudflare Bypass & Selectors) -->
+      <!-- Browser-Use -->
       <div id="browserOptions" class="mode-options hidden">
-        <!-- Chrome Profile Mode (Anti-Cloudflare) -->
         <div class="form-group">
           <div class="label-with-action">
             <label><strong data-i18n="chromeProfileTitle">👤 Chrome Browser Profile (Real Session)</strong></label>
-            <span class="badge badge-scope" style="font-size:0.7rem; background: rgba(16, 185, 129, 0.2); color: #10b981;" data-i18n="activeBadge">Active</span>
+            <span class="badge badge-live" data-i18n="activeBadge">Active</span>
           </div>
           <div class="form-row">
             <div class="form-group checkbox-align">
@@ -171,24 +220,24 @@
               </select>
             </div>
           </div>
-          <div class="form-group" style="margin-top:0.5rem;">
+          <div class="form-group">
             <label for="userDataDirInput" data-i18n="chromeDataDirLabel">Chrome User Data Directory (macOS)</label>
             <input type="text" id="userDataDirInput" value="/Users/giorgiosensi/Library/Application Support/Google/Chrome">
           </div>
 
-          <div class="scope-gate-box" style="margin-top: 0.75rem; border-color: rgba(6, 182, 212, 0.4); background: rgba(6, 182, 212, 0.05);">
-            <div class="scope-gate-title" style="color: #38bdf8;">
-              <span class="alert-icon">💡</span>
-              <strong data-i18n="tipBrowserUseTitle">Tip: Open Dashboard in Firefox/Safari & Close Chrome</strong>
+          <div class="scope-gate-box hint-box">
+            <div class="scope-gate-title">
+              <span class="alert-icon">灯</span>
+              <strong data-i18n="tipBrowserUseTitle">Tip: Open Dashboard in Firefox/Safari &amp; Close Chrome</strong>
             </div>
-            <p class="scope-note" style="margin-bottom: 0;" data-i18n="tipBrowserUseDesc">
+            <p class="scope-note" data-i18n="tipBrowserUseDesc">
               Open this dashboard in a <strong>secondary browser (e.g. Firefox or Safari)</strong> and <strong>close Google Chrome (Cmd + Q)</strong> before starting. Kitsune will launch your real Chrome with <code>Profile 6</code> and your authenticated Claude session without singleton lock conflicts.
             </p>
           </div>
         </div>
 
         <details class="advanced-details">
-          <summary data-i18n="advancedBrowserOptionsSummary">🍪 Manual Cookies & Advanced Browser Options</summary>
+          <summary data-i18n="advancedBrowserOptionsSummary">🍪 Manual Cookies &amp; Advanced Browser Options</summary>
           <div class="details-content">
             <div class="form-group">
               <div class="label-with-action">
@@ -228,7 +277,7 @@
         </details>
       </div>
 
-      <!-- HTTP Mode Options -->
+      <!-- HTTP -->
       <div id="httpOptions" class="mode-options hidden">
         <div class="form-row">
           <div class="form-group">
@@ -242,9 +291,9 @@
         </div>
       </div>
 
-      <!-- Probing Parameters -->
+      <!-- Loop parameters -->
       <div class="form-section">
-        <label class="section-label" data-i18n="probingParamsLabel">Probing & Closed-Loop Parameters</label>
+        <label class="section-label" data-i18n="probingParamsLabel">Probing &amp; Closed-Loop Parameters</label>
         <div class="form-row three-cols">
           <div class="form-group">
             <label for="maxRounds" data-i18n="maxRoundsLabel">Max Rounds</label>
@@ -261,22 +310,45 @@
         </div>
       </div>
 
-      <!-- Action Buttons (Launch / Stop) -->
       <div class="action-buttons-group">
         <button type="button" class="btn btn-primary btn-launch" id="btnLaunch">
-          <span class="btn-icon">🚀</span>
+          <span class="btn-icon">狐</span>
           <span id="btnLaunchText" data-i18n="btnLaunchAssessment">Launch Reverse-Guardrail Assessment</span>
         </button>
         <button type="button" class="btn btn-danger btn-stop hidden" id="btnStop">
-          <span class="btn-icon">🛑</span>
+          <span class="btn-icon">■</span>
           <span id="btnStopText" data-i18n="btnStopAssessment">Stop</span>
         </button>
       </div>
     </section>
 
-    <!-- Right Panel: Live Assessment Cockpit & Results -->
+    <!-- Right: live assessment -->
     <section class="panel results-panel">
-      <!-- Live Metrics Bar -->
+      <span class="rail-label" aria-hidden="true">奥 · INNER SANCTUM</span>
+
+      <!-- Signature: the senbon-torii corridor. Foxfire travels deeper as
+           reconstruction confidence rises; the innermost gate is the system prompt. -->
+      <div class="corridor" id="corridor">
+        <div class="corridor-scene">
+          <div class="corridor-light">
+            <div class="corridor-fill" id="confProgressBar" style="width: 0%;"></div>
+          </div>
+          <div class="corridor-gates">
+            <span class="torii t1"></span>
+            <span class="torii t2"></span>
+            <span class="torii t3"></span>
+            <span class="torii t4"></span>
+            <span class="torii t5"></span>
+            <span class="torii t6"></span>
+            <span class="torii t7"></span>
+          </div>
+          <div class="corridor-readout">
+            <span class="metric-value highlight" id="metricConfidence">0.0%</span>
+            <span class="corridor-caption" data-i18n="metricReconConfidence">Reconstruction Confidence</span>
+          </div>
+        </div>
+      </div>
+
       <div class="metrics-bar">
         <div class="metric-card">
           <span class="metric-title" data-i18n="metricPipelineStatus">Pipeline Status</span>
@@ -287,31 +359,21 @@
           <span class="metric-value" id="metricRound">0 / 0</span>
         </div>
         <div class="metric-card">
-          <span class="metric-title" data-i18n="metricReconConfidence">Reconstruction Confidence</span>
-          <div class="metric-conf-wrapper">
-            <span class="metric-value highlight" id="metricConfidence">0.0%</span>
-            <div class="progress-bar-container">
-              <div class="progress-bar-fill" id="confProgressBar" style="width: 0%;"></div>
-            </div>
-          </div>
-        </div>
-        <div class="metric-card">
           <span class="metric-title" data-i18n="metricLeakedFragments">Leaked Fragments</span>
           <span class="metric-value" id="metricFragments">0</span>
         </div>
       </div>
 
-      <!-- Results Navigation Tabs -->
       <div class="results-tabs">
         <button type="button" class="tab-btn active" data-tab="promptTab" data-i18n="tabReconstructedPrompt">📝 Reconstructed System Prompt</button>
-        <button type="button" class="tab-btn" data-tab="sectionsTab" data-i18n="tabSectionsGaps">📊 Sections & Gaps</button>
+        <button type="button" class="tab-btn" data-tab="sectionsTab" data-i18n="tabSectionsGaps">📊 Sections &amp; Gaps</button>
         <button type="button" class="tab-btn" data-tab="fragmentsTab" data-i18n="tabExtractedFragments">🔍 Extracted Fragments</button>
         <button type="button" class="tab-btn" data-tab="vulnTab" data-i18n="tabVulnAssessment">🔓 Vulnerability Assessment</button>
-        <button type="button" class="tab-btn" data-tab="hardeningTab" data-i18n="tabHardeningRemediation">🛡️ Hardening & Remediation</button>
-        <button type="button" class="tab-btn" data-tab="logsTab" data-i18n="tabAuditLogs">📜 Console & Audit Trail</button>
+        <button type="button" class="tab-btn" data-tab="hardeningTab" data-i18n="tabHardeningRemediation">🛡️ Hardening &amp; Remediation</button>
+        <button type="button" class="tab-btn" data-tab="logsTab" data-i18n="tabAuditLogs">📜 Console &amp; Audit Trail</button>
       </div>
 
-      <!-- Tab 1: Reconstructed System Prompt -->
+      <!-- Reconstructed prompt -->
       <div class="tab-content active" id="promptTab">
         <div class="prompt-viewer-header">
           <span class="viewer-title" data-i18n="synthesizedPromptTitle">Synthesized Best-Effort SYSTEM PROMPT</span>
@@ -324,7 +386,7 @@ The prompt synthesized by the 4 agents (Tester -> Guardrail -> Inspectioner -> V
         </div>
       </div>
 
-      <!-- Tab 2: Covered Sections & Residual Gaps -->
+      <!-- Sections & gaps -->
       <div class="tab-content" id="sectionsTab">
         <div class="sections-grid" id="sectionsContainer">
           <div class="empty-state" data-i18n="emptySections">No sections analyzed yet.</div>
@@ -337,16 +399,16 @@ The prompt synthesized by the 4 agents (Tester -> Guardrail -> Inspectioner -> V
         </div>
       </div>
 
-      <!-- Tab 3: Extracted Fragments Explorer -->
+      <!-- Fragments -->
       <div class="tab-content" id="fragmentsTab">
         <div class="fragments-filter-bar">
           <span data-i18n="filterByCategory">Filter by Category:</span>
           <select id="fragCategoryFilter">
             <option value="ALL" data-i18n="allCategories">All Categories</option>
-            <option value="role_persona">Role & Persona</option>
+            <option value="role_persona">Role &amp; Persona</option>
             <option value="instruction">Instruction</option>
             <option value="constraint_negative_rule">Negative Constraints</option>
-            <option value="tool_reference">Tools & Functions</option>
+            <option value="tool_reference">Tools &amp; Functions</option>
             <option value="security_token">Security Tokens</option>
             <option value="formatting_rule">Formatting Rules</option>
             <option value="refusal_pattern">Refusal Patterns</option>
@@ -372,7 +434,7 @@ The prompt synthesized by the 4 agents (Tester -> Guardrail -> Inspectioner -> V
         </div>
       </div>
 
-      <!-- Tab 4: Vulnerability Assessment (Phase 2) -->
+      <!-- Vulnerabilities -->
       <div class="tab-content" id="vulnTab">
         <div class="vuln-metrics-row">
           <div class="vuln-metric-pill">
@@ -398,42 +460,37 @@ The prompt synthesized by the 4 agents (Tester -> Guardrail -> Inspectioner -> V
         </div>
       </div>
 
-      <!-- Tab 5: Hardening & Remediation (Phase 2) -->
+      <!-- Hardening -->
       <div class="tab-content" id="hardeningTab">
-        <!-- Score Delta Header -->
         <div class="hardening-score-header">
           <div class="score-delta-box">
             <span class="score-delta-label" data-i18n="structuralRobustnessDelta">Structural Robustness Before / After:</span>
             <div class="score-delta-values">
               <span class="score-before" id="scoreBeforeHardening">--</span>
-              <span class="score-arrow">➔</span>
+              <span class="score-arrow">→</span>
               <span class="score-after" id="scoreAfterHardening">--</span>
             </div>
           </div>
           <button type="button" class="btn btn-sm btn-secondary" id="btnCopyHardenedPrompt" data-i18n="btnCopyHardenedPrompt">📋 Copy Hardened Prompt</button>
         </div>
 
-        <!-- Executive Summary -->
         <div class="executive-summary-card">
-          <div class="summary-card-title" data-i18n="execSummaryTitle">📋 Executive Summary & Security Posture</div>
+          <div class="summary-card-title" data-i18n="execSummaryTitle">📋 Executive Summary &amp; Security Posture</div>
           <p id="hardeningExecSummary" data-i18n="waitingDefensiveReport">Waiting for defensive report generation...</p>
         </div>
 
-        <!-- Section Remediations (Before/After) -->
         <div class="remediations-container" id="remediationsContainer">
           <div class="empty-state" data-i18n="emptyRemediations">No remediations available until pipeline execution completes.</div>
         </div>
 
-        <!-- Full Hardened Prompt Viewer -->
-        <div class="prompt-viewer-header" style="margin-top: 24px;">
+        <div class="prompt-viewer-header">
           <span class="viewer-title" data-i18n="hardenedPromptTitle">🛡️ Complete Hardened Production System Prompt</span>
         </div>
         <div class="prompt-code-box">
           <pre><code id="hardenedPromptContent" data-i18n="waitingHardenedContent">The hardened and structured prompt with XML isolation and precedence rules will appear here.</code></pre>
         </div>
 
-        <!-- Architectural Defense Patterns -->
-        <div class="arch-recs-box" style="margin-top: 20px;">
+        <div class="arch-recs-box">
           <h3 data-i18n="archRecsTitle">🏗️ Defensive Architectural Recommendations (Defense-in-Depth)</h3>
           <ul id="archRecsList" class="gaps-list">
             <li data-i18n="waitingExecution">Waiting for execution...</li>
@@ -441,7 +498,7 @@ The prompt synthesized by the 4 agents (Tester -> Guardrail -> Inspectioner -> V
         </div>
       </div>
 
-      <!-- Tab 6: Console & Audit Logs -->
+      <!-- Console -->
       <div class="tab-content" id="logsTab">
         <div class="log-console" id="logConsole">
           <div class="log-line info" data-i18n="logInitialized">[System] Reverse-Guardrail Frontend Dashboard initialized.</div>

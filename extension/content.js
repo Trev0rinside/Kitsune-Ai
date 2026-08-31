@@ -8,10 +8,15 @@ console.log("[Kitsune Relay] Universal Content Script active on", window.locatio
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "EXECUTE_PROBE") {
+    KitsuneHUD.show(request.round_id, request.attempt_id);
     executeProbe(request.payload, request.attempt_id)
-      .then((result) => sendResponse(result))
+      .then((result) => {
+        KitsuneHUD.done(true, `Captured ${result.raw_response.length} chars`);
+        sendResponse(result);
+      })
       .catch((err) => {
         console.error("[Kitsune Relay] Execution error:", err);
+        KitsuneHUD.done(false, err.message || "Probe failed");
         sendResponse({
           raw_response: "",
           latency_ms: 0,
@@ -28,6 +33,7 @@ async function executeProbe(payload, attemptId) {
   console.log(`[Kitsune Relay] Executing probe [${attemptId}] on ${window.location.host}...`);
 
   // 1. Locate Chat Input Element
+  KitsuneHUD.phase("Locating chat input");
   const inputElem = await waitForChatInput(10000);
   if (!inputElem) {
     throw new Error(`Could not find chat input field on ${window.location.href}. Please ensure you are logged in.`);
@@ -39,6 +45,7 @@ async function executeProbe(payload, attemptId) {
   const initialLastMessageText = initialMessageCount > 0 ? (initialMessages[initialMessageCount - 1].innerText || "").trim() : "";
 
   // 2. Focus and Insert Prompt into Input Field
+  KitsuneHUD.phase("Typing injection probe");
   await insertPromptText(inputElem, payload);
 
   // 3. Execute Multi-Strategy Submission (Button click + Synthetic Enter Key sequence)
@@ -47,6 +54,7 @@ async function executeProbe(payload, attemptId) {
   console.log("[Kitsune Relay] Probe submitted. Waiting for assistant response to stream...");
 
   // 4. Wait for and extract the streamed response
+  KitsuneHUD.phase("Awaiting guardrail response");
   const rawResponse = await waitForResponseStream(initialMessageCount, initialLastMessageText, 175000);
   const latencyMs = Math.round(performance.now() - startTime);
 
@@ -454,3 +462,119 @@ async function waitForResponseStream(initialCount, initialLastText, timeoutMs = 
 
   return lastText || "No response text captured within timeout.";
 }
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * On-page HUD — when Kitsune types into someone's tab, the tab says so.
+ * Rendered in a shadow root so no host page style can reach it, and it never
+ * intercepts clicks.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+const KitsuneHUD = (() => {
+  const HOST_ID = "kitsune-relay-hud";
+  let root = null, phaseEl = null, metaEl = null, hostEl = null, hideTimer = null;
+
+  function build() {
+    if (hostEl && document.documentElement.contains(hostEl)) return;
+
+    hostEl = document.createElement("div");
+    hostEl.id = HOST_ID;
+    hostEl.style.cssText = "all:initial;position:fixed;z-index:2147483647;right:18px;bottom:18px;pointer-events:none;";
+    root = hostEl.attachShadow({ mode: "open" });
+    root.innerHTML = `
+      <style>
+        :host { all: initial; }
+        .card {
+          display: flex; gap: 10px; align-items: flex-start;
+          width: 252px; padding: 12px 13px;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          color: #DCE3EE;
+          background: linear-gradient(180deg, #16233A, #080E1A);
+          border: 1px solid rgba(201,162,39,0.22);
+          border-left: 3px solid #F04E37;
+          border-radius: 5px;
+          box-shadow: 0 22px 48px -22px #000, 0 0 34px -18px #F04E37;
+          opacity: 0; transform: translateY(10px);
+          transition: opacity .28s ease, transform .28s ease;
+        }
+        .card.in { opacity: 1; transform: none; }
+        .glyph {
+          font-family: "Hiragino Mincho ProN", Georgia, serif;
+          font-size: 17px; line-height: 1; color: #FFC46B;
+          text-shadow: 0 0 14px rgba(255,196,107,.6);
+          animation: flicker 2.6s ease-in-out infinite;
+        }
+        .body { flex: 1; min-width: 0; }
+        .eyebrow {
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 8.5px; letter-spacing: .22em; text-transform: uppercase;
+          color: #C9A227; margin-bottom: 3px;
+        }
+        .phase { font-size: 12px; font-weight: 700; color: #F1EADC; line-height: 1.35; }
+        .meta {
+          margin-top: 3px;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 9.5px; color: #66748C; word-break: break-all;
+        }
+        .bar { height: 2px; margin-top: 8px; border-radius: 2px; background: rgba(255,196,107,.16); overflow: hidden; }
+        .bar span {
+          display: block; width: 34%; height: 100%;
+          background: linear-gradient(90deg, transparent, #FFE7B8, transparent);
+          animation: sweep 1.5s linear infinite;
+        }
+        .card.done { border-left-color: #62C6A6; }
+        .card.done .bar span { animation: none; width: 100%; background: #62C6A6; }
+        .card.err { border-left-color: #FF4B3E; }
+        .card.err .bar span { animation: none; width: 100%; background: #FF4B3E; }
+        @keyframes sweep { from { transform: translateX(-120%); } to { transform: translateX(340%); } }
+        @keyframes flicker { 0%,100% { opacity: 1; } 48% { opacity: .55; } }
+        @media (prefers-reduced-motion: reduce) {
+          .card, .glyph, .bar span { animation: none !important; transition: none !important; }
+        }
+      </style>
+      <div class="card" part="card">
+        <div class="glyph">狐</div>
+        <div class="body">
+          <div class="eyebrow">Kitsune relay</div>
+          <div class="phase">Starting</div>
+          <div class="meta"></div>
+          <div class="bar"><span></span></div>
+        </div>
+      </div>`;
+
+    document.documentElement.appendChild(hostEl);
+    phaseEl = root.querySelector(".phase");
+    metaEl = root.querySelector(".meta");
+  }
+
+  function card() { return root && root.querySelector(".card"); }
+
+  return {
+    show(roundId, attemptId) {
+      try {
+        clearTimeout(hideTimer);
+        build();
+        const c = card();
+        c.classList.remove("done", "err");
+        phaseEl.textContent = "Probe dispatched to this tab";
+        metaEl.textContent = `round ${roundId ?? "?"} · ${String(attemptId || "").slice(0, 8)}`;
+        requestAnimationFrame(() => c.classList.add("in"));
+      } catch (e) {}
+    },
+    phase(text) {
+      try { if (phaseEl) phaseEl.textContent = text; } catch (e) {}
+    },
+    done(ok, text) {
+      try {
+        const c = card();
+        if (!c) return;
+        c.classList.add(ok ? "done" : "err");
+        if (phaseEl) phaseEl.textContent = text;
+        hideTimer = setTimeout(() => {
+          c.classList.remove("in");
+          setTimeout(() => { try { hostEl.remove(); hostEl = null; } catch (e) {} }, 400);
+        }, 3200);
+      } catch (e) {}
+    }
+  };
+})();
