@@ -94,6 +94,7 @@ class ReverseGuardrailWorkflow:
             return {}
 
         self.rate_limiter.rps = state.config.rate_limit_rps
+        tried_payloads, refusal_stats = self._attempt_history(state)
         results = await self.tester.execute_round(
             round_id=state.current_round,
             target=self.target,
@@ -101,6 +102,8 @@ class ReverseGuardrailWorkflow:
             count=state.config.attempts_per_round,
             gaps=state.current_gaps,
             strategy_stats=await self._strategy_effectiveness(),
+            tried_payloads=tried_payloads,
+            refusal_stats=refusal_stats,
         )
 
         return {
@@ -124,6 +127,25 @@ class ReverseGuardrailWorkflow:
             key = frag.source_strategy.value
             stats[key] = stats.get(key, 0) + 1
         return stats
+
+    def _attempt_history(self, state: PipelineState):
+        """Reconstruct what the Tester has already done, across all prior rounds.
+
+        Returns the payloads already sent (so probes aren't re-rolled verbatim)
+        and a per-strategy refusal tally (so strategies that only ever get
+        refused are deprioritised, not confused with 'not tried yet').
+        """
+        tried_payloads = []
+        refusal_stats: Dict[str, int] = {}
+        for key, results in state.metadata.items():
+            if not key.endswith("_results"):
+                continue
+            for attempt, response in results:
+                tried_payloads.append(attempt.payload)
+                if response.refused:
+                    strat = attempt.strategy_category.value
+                    refusal_stats[strat] = refusal_stats.get(strat, 0) + 1
+        return tried_payloads, refusal_stats
 
     async def _node_inspectioner(self, state: PipelineState) -> Dict[str, Any]:
         """Inspectioner analyzes responses and saves extracted fragments."""
