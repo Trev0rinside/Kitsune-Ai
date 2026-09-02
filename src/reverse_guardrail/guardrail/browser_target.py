@@ -274,7 +274,11 @@ class BrowserGuardrailTarget(BaseGuardrailTarget):
 
         return sandbox_base
 
-    async def _send_prompt(self, attempt: InjectionAttempt) -> GuardrailResponse:
+    async def _send_prompt(
+        self,
+        attempt: InjectionAttempt,
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> GuardrailResponse:
         """Navigate to target URL, input injection payload, and capture response."""
         await self.initialize_browser()
         assert self._context is not None

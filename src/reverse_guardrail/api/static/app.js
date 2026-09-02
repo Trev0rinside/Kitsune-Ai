@@ -57,6 +57,7 @@ const I18N = {
     maxRoundsLabel: "Max Rounds",
     attemptsPerRoundLabel: "Probes / Round",
     confThresholdLabel: "Confidence Target",
+    multiturnDepthLabel: "Multi-turn Depth",
     btnLaunchAssessment: "Launch Reverse-Guardrail Assessment",
     btnRunningAssessment: "Assessment in Progress...",
     btnStopAssessment: "Stop",
@@ -155,6 +156,7 @@ const I18N = {
     maxRoundsLabel: "Max Rounds",
     attemptsPerRoundLabel: "Sonde / Round",
     confThresholdLabel: "Soglia Confidenza",
+    multiturnDepthLabel: "Profondità Multi-turn",
     btnLaunchAssessment: "Avvia Reverse-Guardrail Assessment",
     btnRunningAssessment: "Assessment in Corso...",
     btnStopAssessment: "Stop",
@@ -589,6 +591,7 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
         max_rounds: parseInt(maxRoundsInput.value) || 4,
         attempts_per_round: parseInt(attemptsPerRoundInput.value) || 4,
         confidence_threshold: parseFloat(confThresholdInput.value) || 0.85,
+        multiturn_depth: parseInt((document.getElementById("multiturnDepth")||{}).value) || 3,
         timeout_seconds: 180.0,
         // Mock is the offline benchmark: drive it with deterministic agents so it
         // runs instantly and self-contained, no external LLM round-trips.

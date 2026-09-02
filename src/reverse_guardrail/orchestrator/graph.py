@@ -104,6 +104,7 @@ class ReverseGuardrailWorkflow:
             strategy_stats=await self._strategy_effectiveness(),
             tried_payloads=tried_payloads,
             refusal_stats=refusal_stats,
+            multiturn_depth=state.config.multiturn_depth,
         )
 
         return {

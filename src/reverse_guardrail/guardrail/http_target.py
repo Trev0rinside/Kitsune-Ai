@@ -1,7 +1,7 @@
 """HTTP REST adapter for probing real authorized LLM Guardrail endpoints."""
 
 import time
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 import httpx
 from reverse_guardrail.core.models import GuardrailResponse, InjectionAttempt, TargetScopeConfig
 from reverse_guardrail.core.rate_limiter import execute_with_backoff
@@ -28,12 +28,20 @@ class HttpGuardrailTarget(BaseGuardrailTarget):
         self.response_extractor = response_extractor
         self.timeout = timeout_seconds
 
-    async def _send_prompt(self, attempt: InjectionAttempt) -> GuardrailResponse:
+    async def _send_prompt(
+        self,
+        attempt: InjectionAttempt,
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> GuardrailResponse:
         """Send the prompt payload to the external HTTP target."""
         start = time.monotonic()
 
         body = dict(self.request_template)
         body[self.prompt_key] = attempt.payload
+        if history:
+            # Best-effort multi-turn: hand the endpoint the full transcript so a
+            # chat-completions-style API can keep context across turns.
+            body["messages"] = history + [{"role": "user", "content": attempt.payload}]
 
         headers = {
             "Content-Type": "application/json",

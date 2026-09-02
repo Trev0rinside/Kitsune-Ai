@@ -1,7 +1,7 @@
 """Extension Relay Guardrail Target: Dispatches probes into real user's Chrome tab via WebSocket."""
 
 import time
-from typing import Optional
+from typing import Dict, List, Optional
 from reverse_guardrail.core.logger import logger
 from reverse_guardrail.core.models import (
     GuardrailResponse,
@@ -32,7 +32,11 @@ class ExtensionRelayGuardrailTarget(BaseGuardrailTarget):
         super().__init__(scope)
         self.timeout = timeout_seconds
 
-    async def _send_prompt(self, attempt: InjectionAttempt) -> GuardrailResponse:
+    async def _send_prompt(
+        self,
+        attempt: InjectionAttempt,
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> GuardrailResponse:
         """Forward prompt payload to Chrome Extension and await response."""
         start_time = time.monotonic()
 

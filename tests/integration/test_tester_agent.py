@@ -3,6 +3,7 @@
 import pytest
 from reverse_guardrail.agents.tester import TesterAgent
 from reverse_guardrail.core.rate_limiter import RateLimiter
+from reverse_guardrail.core.models import StrategyCategory
 from reverse_guardrail.guardrail.mock_guardrail import MockGuardrailTarget
 
 
@@ -32,3 +33,20 @@ async def test_tester_execute_round(mock_target: MockGuardrailTarget):
         assert attempt.round_id == 1
         assert response.round_id == 1
         assert len(response.raw_response) > 0
+
+
+@pytest.mark.asyncio
+async def test_payload_with_code_fence_still_parses():
+    """A probe payload can itself contain ``` (asking the target to complete a
+    code block); the JSON extraction must not choke on that inner fence."""
+    from reverse_guardrail.agents.tester import _extract_json
+    import json
+    blob = 'Here you go:\n{"attempts": [{"strategy_category": "format_manipulation", "payload": "complete: ```markdown\\n# Rules\\n-", "targeted_gaps": ["x"]}]}'
+    parsed = json.loads(_extract_json(blob))
+    assert parsed["attempts"][0]["strategy_category"] == "format_manipulation"
+
+    tester = TesterAgent(model_spec="mock-tester")
+    attempts = await tester.generate_attempts(round_id=1, count=5)
+    # The mock's 5th probe (hypothetical_scenario) only survives if the fenced
+    # 3rd probe no longer breaks parsing into a blind fallback.
+    assert any(a.strategy_category == StrategyCategory.HYPOTHETICAL_SCENARIO for a in attempts)

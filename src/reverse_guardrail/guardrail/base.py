@@ -2,7 +2,7 @@
 
 import abc
 import time
-from typing import Optional
+from typing import Dict, List, Optional
 from reverse_guardrail.core.models import GuardrailResponse, InjectionAttempt, TargetScopeConfig
 from reverse_guardrail.core.scope_guard import ScopeAuthorizationGuard
 
@@ -22,8 +22,16 @@ class BaseGuardrailTarget(abc.ABC):
             self.scope_config, action="INITIALIZE_GUARDRAIL_TARGET"
         )
 
-    async def execute_attempt(self, attempt: InjectionAttempt) -> GuardrailResponse:
-        """Enforces scope authorization gate before dispatching the injection attempt."""
+    async def execute_attempt(
+        self,
+        attempt: InjectionAttempt,
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> GuardrailResponse:
+        """Enforces scope authorization gate before dispatching the injection attempt.
+
+        `history` carries prior conversational turns for multi-turn probing; a
+        stateless single-shot probe passes None.
+        """
         # Unconditional check on every execution
         ScopeAuthorizationGuard.enforce(
             self.scope_config,
@@ -36,7 +44,7 @@ class BaseGuardrailTarget(abc.ABC):
         )
         start_time = time.monotonic()
         try:
-            response = await self._send_prompt(attempt)
+            response = await self._send_prompt(attempt, history=history)
             return response
         except Exception as exc:
             latency_ms = (time.monotonic() - start_time) * 1000.0
@@ -60,6 +68,14 @@ class BaseGuardrailTarget(abc.ABC):
         return None
 
     @abc.abstractmethod
-    async def _send_prompt(self, attempt: InjectionAttempt) -> GuardrailResponse:
-        """Subclasses implement target-specific network communication or simulation."""
+    async def _send_prompt(
+        self,
+        attempt: InjectionAttempt,
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> GuardrailResponse:
+        """Subclasses implement target-specific network communication or simulation.
+
+        `history` (prior [{role, content}] turns) is honoured by stateful/API
+        targets; tab-bound targets (extension relay) already carry conversation
+        state in the live chat and may ignore it."""
         pass

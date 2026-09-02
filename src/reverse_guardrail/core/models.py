@@ -342,6 +342,11 @@ class PipelineConfig(BaseModel):
         gt=0.0,
         description="Max requests per second sent to the Guardrail.",
     )
+    multiturn_depth: int = Field(
+        3,
+        ge=1,
+        description="Turns in a multi-turn conversational probe (1 = single-shot).",
+    )
     timeout_seconds: float = Field(
         180.0,
         gt=0.0,

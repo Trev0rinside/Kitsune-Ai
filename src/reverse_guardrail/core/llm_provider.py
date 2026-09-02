@@ -20,8 +20,10 @@ class BaseLLMClient(abc.ABC):
         system_prompt: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
+        history: Optional[List[Dict[str, str]]] = None,
     ) -> str:
-        """Generates a text completion given a prompt and optional system prompt."""
+        """Generates a completion. `history` is prior [{role, content}] turns for
+        multi-turn probing, inserted between the system prompt and `prompt`."""
         pass
 
 
@@ -37,6 +39,7 @@ class MockLLMClient(BaseLLMClient):
         system_prompt: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
+        history: Optional[List[Dict[str, str]]] = None,
     ) -> str:
         """Simulate realistic agent outputs according to the mock role."""
         if self.role == "tester":
@@ -211,10 +214,13 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
         system_prompt: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
+        history: Optional[List[Dict[str, str]]] = None,
     ) -> str:
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
+        if history:
+            messages.extend(history)
         messages.append({"role": "user", "content": prompt})
 
         headers = {

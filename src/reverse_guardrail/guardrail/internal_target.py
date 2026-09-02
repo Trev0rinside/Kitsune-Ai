@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import Optional
+from typing import Dict, List, Optional
 from reverse_guardrail.core.llm_provider import get_llm_client
 from reverse_guardrail.core.models import (
     GuardrailResponse,
@@ -45,7 +45,11 @@ class InternalLLMGuardrailTarget(BaseGuardrailTarget):
         """The protected system prompt under test is the ground truth here."""
         return self.system_prompt
 
-    async def _send_prompt(self, attempt: InjectionAttempt) -> GuardrailResponse:
+    async def _send_prompt(
+        self,
+        attempt: InjectionAttempt,
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> GuardrailResponse:
         """Sends the injection prompt to the live LLM with the protected system prompt."""
         start_time = time.monotonic()
         payload_lower = attempt.payload.lower()
@@ -74,6 +78,7 @@ class InternalLLMGuardrailTarget(BaseGuardrailTarget):
                 prompt=attempt.payload,
                 system_prompt=self.system_prompt,
                 temperature=self.temperature,
+                history=history,
             )
             latency_ms = (time.monotonic() - start_time) * 1000.0
 
