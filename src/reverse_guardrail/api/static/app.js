@@ -590,12 +590,21 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
         attempts_per_round: parseInt(attemptsPerRoundInput.value) || 4,
         confidence_threshold: parseFloat(confThresholdInput.value) || 0.85,
         timeout_seconds: 180.0,
-        models: {
-          tester: "deepseek-v4-flash",
-          inspectioner: "deepseek-v4-flash",
-          reverse_engineer: "deepseek-v4-flash",
-          embedding: "models/text-embedding-004"
-        }
+        // Mock is the offline benchmark: drive it with deterministic agents so it
+        // runs instantly and self-contained, no external LLM round-trips.
+        models: currentTargetMode === 'mock'
+          ? {
+              tester: "mock-tester",
+              inspectioner: "mock-inspectioner",
+              reverse_engineer: "mock-reverse-engineer",
+              embedding: "mock-embedding"
+            }
+          : {
+              tester: "deepseek-v4-flash",
+              inspectioner: "deepseek-v4-flash",
+              reverse_engineer: "deepseek-v4-flash",
+              embedding: "models/text-embedding-004"
+            }
       }
     };
 

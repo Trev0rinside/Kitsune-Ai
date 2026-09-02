@@ -250,6 +250,12 @@ def get_llm_client(model_spec: str, **kwargs: Any) -> BaseLLMClient:
     if "deepseek" in model_lower:
         base_url = base_url or os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
         api_key = api_key or os.environ.get("DEEPSEEK_API_KEY")
+        if not _usable_key(api_key):
+            # No credentials -> a real call would hang on connect and every agent
+            # would fall back anyway. Degrade instantly to the deterministic client
+            # so keyless runs (e.g. the offline Mock mode) stay fast.
+            logger.warning(f"No API key for '{model_spec}'; using deterministic offline client.")
+            return MockLLMClient(role="general")
         # If user passed deepseek-v4-flash or deepseek-chat
         model_name = "deepseek-chat" if "flash" in model_lower or model_lower == "deepseek" else model_spec
         return OpenAICompatibleLLMClient(model=model_name, api_key=api_key, base_url=base_url)
@@ -259,4 +265,13 @@ def get_llm_client(model_spec: str, **kwargs: Any) -> BaseLLMClient:
         return OpenAICompatibleLLMClient(model=model_spec, api_key="ollama", base_url=base_url)
 
     # Default to OpenAI compatible
+    api_key = api_key or os.environ.get("OPENAI_API_KEY")
+    if not _usable_key(api_key):
+        logger.warning(f"No API key for '{model_spec}'; using deterministic offline client.")
+        return MockLLMClient(role="general")
     return OpenAICompatibleLLMClient(model=model_spec, api_key=api_key, base_url=base_url)
+
+
+def _usable_key(api_key: Optional[str]) -> bool:
+    """A key is usable only if present and not the placeholder sentinel."""
+    return bool(api_key) and api_key.strip().upper() not in ("", "EMPTY")

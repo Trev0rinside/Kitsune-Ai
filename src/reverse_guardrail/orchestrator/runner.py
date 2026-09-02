@@ -45,6 +45,10 @@ class PipelineRunner:
                 scope_config=self.config.target,
                 timeout_seconds=self.config.timeout_seconds,
             )
+        elif self.config.target.target_mode == "mock":
+            # An explicit mode wins over a stale target_url the UI may still carry
+            # (the dashboard keeps a default URL in the field across mode switches).
+            self.target = MockGuardrailTarget(scope_config=self.config.target)
         elif self.config.target.target_mode == "internal" or (
             not self.config.target.target_url
             and not self.config.target.use_browser
