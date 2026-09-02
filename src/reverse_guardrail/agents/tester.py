@@ -1,5 +1,6 @@
 """Agent Soft Injection - Tester: Generates and executes iterative soft injection probes."""
 
+import asyncio
 import json
 from typing import Dict, List, Optional, Tuple
 from uuid import uuid4
@@ -129,16 +130,25 @@ class TesterAgent(BaseAgent):
         attempts = await self.generate_attempts(
             round_id=round_id, count=count, gaps=gaps, strategy_stats=strategy_stats
         )
-        results: List[Tuple[InjectionAttempt, GuardrailResponse]] = []
 
-        for attempt in attempts:
+        async def _run(attempt: InjectionAttempt) -> Tuple[InjectionAttempt, GuardrailResponse]:
+            # Each probe still spends a rate-limit token, so concurrency stays
+            # bounded by rps — it only overlaps the in-flight round trips.
             await rate_limiter.acquire()
             self.logger.info(
                 f"[Tester] Round {round_id} - Sending {attempt.strategy_category.value} attempt: {attempt.payload[:60]}..."
             )
             response = await target.execute_attempt(attempt)
-            results.append((attempt, response))
+            return (attempt, response)
 
+        # Stateless targets overlap probes (big win against slow LLM endpoints);
+        # tab-bound targets (relay, browser) must stay strictly sequential.
+        if getattr(target, "concurrent_safe", False):
+            return list(await asyncio.gather(*(_run(a) for a in attempts)))
+
+        results: List[Tuple[InjectionAttempt, GuardrailResponse]] = []
+        for attempt in attempts:
+            results.append(await _run(attempt))
         return results
 
     def _fallback_attempts(

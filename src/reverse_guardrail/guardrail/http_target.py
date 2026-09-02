@@ -4,11 +4,14 @@ import time
 from typing import Any, Callable, Dict, Optional
 import httpx
 from reverse_guardrail.core.models import GuardrailResponse, InjectionAttempt, TargetScopeConfig
+from reverse_guardrail.core.rate_limiter import execute_with_backoff
 from reverse_guardrail.guardrail.base import BaseGuardrailTarget
 
 
 class HttpGuardrailTarget(BaseGuardrailTarget):
     """Plug-in adapter for connecting to a real external Guardrail over HTTP/REST."""
+
+    concurrent_safe = True
 
     def __init__(
         self,
@@ -45,7 +48,22 @@ class HttpGuardrailTarget(BaseGuardrailTarget):
                 headers["Authorization"] = token
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.post(self.target_url, json=body, headers=headers)
+            async def _do_request() -> httpx.Response:
+                r = await client.post(self.target_url, json=body, headers=headers)
+                # Retry transient upstream failures; treat 5xx as retryable so a
+                # blip doesn't burn the probe (and the leak it might have surfaced).
+                if r.status_code >= 500:
+                    raise httpx.HTTPStatusError(
+                        f"Upstream {r.status_code}", request=r.request, response=r
+                    )
+                return r
+
+            resp = await execute_with_backoff(
+                _do_request,
+                max_retries=2,
+                initial_delay=0.5,
+                retry_exceptions=(httpx.TransportError, httpx.HTTPStatusError),
+            )
             latency_ms = (time.monotonic() - start) * 1000.0
 
             raw_text = ""

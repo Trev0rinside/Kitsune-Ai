@@ -20,6 +20,8 @@ class InternalLLMGuardrailTarget(BaseGuardrailTarget):
     configured with a specific protected System Prompt under test.
     """
 
+    concurrent_safe = True
+
     def __init__(
         self,
         scope_config: Optional[TargetScopeConfig] = None,

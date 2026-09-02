@@ -45,6 +45,8 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
 class MockGuardrailTarget(BaseGuardrailTarget):
     """Simulates an LLM Guardrail protecting the ground truth system prompt above."""
 
+    concurrent_safe = True
+
     def __init__(
         self,
         scope_config: Optional[TargetScopeConfig] = None,

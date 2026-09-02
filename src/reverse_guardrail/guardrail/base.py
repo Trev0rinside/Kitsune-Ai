@@ -10,6 +10,11 @@ from reverse_guardrail.core.scope_guard import ScopeAuthorizationGuard
 class BaseGuardrailTarget(abc.ABC):
     """Abstract interface for all Target Guardrails (Mock or Real)."""
 
+    # Stateless request/response targets can run a round's probes concurrently.
+    # Tab-bound targets (extension relay, browser) must stay sequential: they
+    # type into a single shared chat, so overlapping probes would interleave.
+    concurrent_safe: bool = False
+
     def __init__(self, scope_config: TargetScopeConfig):
         self.scope_config = scope_config
         # Verify scope at initialization
