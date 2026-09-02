@@ -32,6 +32,7 @@ class PipelineStatusResponse(BaseModel):
     current_round: int
     max_rounds: int
     latest_confidence: float
+    measured_completeness: Optional[float] = None
     total_fragments_count: int
     round_summaries: List[RoundSummary]
     stop_reason: Optional[str] = None
@@ -87,6 +88,10 @@ async def start_pipeline(request: PipelineStartRequest) -> PipelineStatusRespons
             current_round=final_state.current_round,
             max_rounds=request.config.max_rounds,
             latest_confidence=latest_conf,
+            measured_completeness=(
+                final_state.latest_metrics.completeness_score
+                if final_state.latest_metrics else None
+            ),
             total_fragments_count=final_state.total_fragments_count,
             round_summaries=final_state.round_summaries,
             stop_reason=final_state.stop_reason,
@@ -148,6 +153,9 @@ async def get_pipeline_status(run_id: str) -> PipelineStatusResponse:
         current_round=state.current_round,
         max_rounds=state.config.max_rounds,
         latest_confidence=latest_conf,
+        measured_completeness=(
+            state.latest_metrics.completeness_score if state.latest_metrics else None
+        ),
         total_fragments_count=state.total_fragments_count,
         round_summaries=state.round_summaries,
         stop_reason=state.stop_reason,

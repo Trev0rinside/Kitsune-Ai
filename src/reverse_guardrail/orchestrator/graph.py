@@ -7,7 +7,8 @@ from reverse_guardrail.agents.inspectioner import InspectionerAgent
 from reverse_guardrail.agents.reverse_engineer import ReversePromptEngineerAgent
 from reverse_guardrail.agents.tester import TesterAgent
 from reverse_guardrail.agents.vulnerability_analyzer import VulnerabilityAnalyzerAgent
-from reverse_guardrail.core.models import PipelineStatus, RoundSummary
+from reverse_guardrail.core.models import FragmentCategory, PipelineStatus, RoundSummary
+from reverse_guardrail.evaluation.evaluator import EvaluationMetrics, GuardrailEvaluator
 from reverse_guardrail.core.rate_limiter import RateLimiter
 from reverse_guardrail.core.scope_guard import ScopeAuthorizationError, ScopeAuthorizationGuard
 from reverse_guardrail.guardrail.base import BaseGuardrailTarget
@@ -99,6 +100,7 @@ class ReverseGuardrailWorkflow:
             rate_limiter=self.rate_limiter,
             count=state.config.attempts_per_round,
             gaps=state.current_gaps,
+            strategy_stats=await self._strategy_effectiveness(),
         )
 
         return {
@@ -107,6 +109,21 @@ class ReverseGuardrailWorkflow:
                 f"round_{state.current_round}_results": results,
             }
         }
+
+    async def _strategy_effectiveness(self) -> Dict[str, int]:
+        """Tally, per strategy, how many real leak fragments it has produced so far.
+
+        Refusal patterns are excluded — a refusal is not a leak — so the Tester
+        biases toward strategies that actually surface prompt content.
+        """
+        fragments = await self.store.get_all_fragments()
+        stats: Dict[str, int] = {}
+        for frag in fragments:
+            if frag.category == FragmentCategory.REFUSAL_PATTERN:
+                continue
+            key = frag.source_strategy.value
+            stats[key] = stats.get(key, 0) + 1
+        return stats
 
     async def _node_inspectioner(self, state: PipelineState) -> Dict[str, Any]:
         """Inspectioner analyzes responses and saves extracted fragments."""
@@ -179,18 +196,46 @@ class ReverseGuardrailWorkflow:
         }
 
     async def _node_evaluate_stop(self, state: PipelineState) -> Dict[str, Any]:
-        """Determine if stopping criteria are met or if round advances."""
+        """Determine if stopping criteria are met or if round advances.
+
+        When the target's true system prompt is known (mock / internal LLM under
+        test), the stop is driven by the reconstruction MEASURED against that
+        ground truth, not by the reverse-engineer's own confidence — the latter
+        is self-graded and unreliable. Live targets (extension / HTTP) have no
+        ground truth, so they fall back to the self-reported confidence.
+        """
         if state.status == PipelineStatus.ABORTED_UNAUTHORIZED:
             return {"status": PipelineStatus.ABORTED_UNAUTHORIZED}
 
-        # 1. Confidence threshold reached
-        if (
-            state.latest_report
-            and state.latest_report.overall_confidence >= state.config.confidence_threshold
-        ):
+        updates: Dict[str, Any] = {}
+        effective_score = (
+            state.latest_report.overall_confidence if state.latest_report else 0.0
+        )
+        score_label = "self-reported confidence"
+
+        ground_truth = self.target.get_ground_truth()
+        if ground_truth and state.latest_report:
+            metrics = GuardrailEvaluator.evaluate(
+                reconstructed_prompt=state.latest_report.reconstructed_prompt,
+                ground_truth_prompt=ground_truth,
+            )
+            effective_score = metrics.completeness_score
+            score_label = "measured completeness"
+            updates["latest_metrics"] = metrics
+            # Record the measured score on the round summary just produced.
+            if state.round_summaries:
+                summaries = list(state.round_summaries)
+                summaries[-1] = summaries[-1].model_copy(
+                    update={"measured_score": effective_score}
+                )
+                updates["round_summaries"] = summaries
+
+        # 1. Completeness/confidence threshold reached
+        if state.latest_report and effective_score >= state.config.confidence_threshold:
             return {
+                **updates,
                 "status": PipelineStatus.COMPLETED,
-                "stop_reason": f"Confidence threshold reached ({state.latest_report.overall_confidence:.2f} >= {state.config.confidence_threshold:.2f})",
+                "stop_reason": f"Threshold reached ({score_label} {effective_score:.2f} >= {state.config.confidence_threshold:.2f})",
             }
 
         # 2. Stagnation threshold reached
@@ -199,6 +244,7 @@ class ReverseGuardrailWorkflow:
             >= state.config.stagnation_patience_rounds
         ):
             return {
+                **updates,
                 "status": PipelineStatus.COMPLETED,
                 "stop_reason": f"Fragment stagnation: {state.consecutive_zero_new_fragments} consecutive rounds with 0 new fragments.",
             }
@@ -206,12 +252,14 @@ class ReverseGuardrailWorkflow:
         # 3. Max rounds reached
         if state.current_round >= state.config.max_rounds:
             return {
+                **updates,
                 "status": PipelineStatus.COMPLETED,
                 "stop_reason": f"Max rounds limit reached ({state.config.max_rounds}).",
             }
 
         # Continue to next round
         return {
+            **updates,
             "current_round": state.current_round + 1,
             "status": PipelineStatus.RUNNING,
         }

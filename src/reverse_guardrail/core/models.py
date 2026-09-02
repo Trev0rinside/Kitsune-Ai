@@ -368,6 +368,10 @@ class RoundSummary(BaseModel):
     new_fragments_count: int
     current_confidence: float
     gaps_count: int
+    measured_score: Optional[float] = Field(
+        default=None,
+        description="Reconstruction completeness measured against ground truth (0-1), when known.",
+    )
     timestamp: datetime = Field(default_factory=_utc_now)
 
 

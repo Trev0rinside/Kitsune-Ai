@@ -10,6 +10,7 @@ from reverse_guardrail.core.models import (
     RoundSummary,
     VulnerabilityReport,
 )
+from reverse_guardrail.evaluation.evaluator import EvaluationMetrics
 
 
 class PipelineState(BaseModel):
@@ -29,6 +30,7 @@ class PipelineState(BaseModel):
         ]
     )
     latest_report: Optional[ReconstructionReport] = None
+    latest_metrics: Optional[EvaluationMetrics] = None
     vulnerability_report: Optional[VulnerabilityReport] = None
     hardening_report: Optional[HardeningReport] = None
     round_summaries: List[RoundSummary] = Field(default_factory=list)

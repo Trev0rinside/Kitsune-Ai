@@ -45,6 +45,15 @@ class BaseGuardrailTarget(abc.ABC):
                 error_message=str(exc),
             )
 
+    def get_ground_truth(self) -> Optional[str]:
+        """Return the target's true system prompt when the harness knows it.
+
+        Only offline/internal targets (mock, internal LLM under test) can expose
+        this; live targets (extension relay, HTTP) return None, and the pipeline
+        then falls back to the reverse-engineer's self-reported confidence.
+        """
+        return None
+
     @abc.abstractmethod
     async def _send_prompt(self, attempt: InjectionAttempt) -> GuardrailResponse:
         """Subclasses implement target-specific network communication or simulation."""

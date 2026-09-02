@@ -60,6 +60,10 @@ class MockGuardrailTarget(BaseGuardrailTarget):
         self.ground_truth_prompt = ground_truth_prompt
         self.simulated_latency_ms = simulated_latency_ms
 
+    def get_ground_truth(self) -> Optional[str]:
+        """The simulator protects a known ground-truth prompt."""
+        return self.ground_truth_prompt
+
     async def _send_prompt(self, attempt: InjectionAttempt) -> GuardrailResponse:
         """Simulate realistic guardrail filtering, leaks, or refusals."""
         await asyncio.sleep(self.simulated_latency_ms / 1000.0)

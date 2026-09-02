@@ -945,6 +945,18 @@ textarea { resize: vertical; line-height: 1.6; min-height: 74px; }
   text-transform: uppercase;
   color: var(--text-mute);
 }
+.corridor-measured {
+  margin-top: 5px;
+  padding: 2px 8px;
+  align-self: flex-start;
+  border: 1px solid rgba(98, 198, 166, 0.4);
+  border-radius: 999px;
+  background: rgba(98, 198, 166, 0.1);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  color: var(--sev-low);
+}
 
 /* ── Metrics ────────────────────────────────────────────────────────────── */
 

@@ -39,6 +39,10 @@ class InternalLLMGuardrailTarget(BaseGuardrailTarget):
         self.temperature = temperature
         self.llm = get_llm_client(self.model_spec)
 
+    def get_ground_truth(self) -> Optional[str]:
+        """The protected system prompt under test is the ground truth here."""
+        return self.system_prompt
+
     async def _send_prompt(self, attempt: InjectionAttempt) -> GuardrailResponse:
         """Sends the injection prompt to the live LLM with the protected system prompt."""
         start_time = time.monotonic()

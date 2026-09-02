@@ -832,6 +832,19 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
     const confPct = Math.round(data.latest_confidence * 100);
     metricConfidence.innerText = `${confPct}%`;
     confProgressBar.style.width = `${confPct}%`;
+
+    // When the target's true prompt is known, show completeness MEASURED against
+    // it — the trustworthy signal — beside the self-reported confidence.
+    const measured = document.getElementById('metricMeasured');
+    if (measured) {
+      if (data.measured_completeness != null) {
+        const mPct = Math.round(data.measured_completeness * 100);
+        measured.innerText = `${mPct}% ${currentLang === 'en' ? 'measured vs ground truth' : 'misurato vs ground truth'}`;
+        measured.hidden = false;
+      } else {
+        measured.hidden = true;
+      }
+    }
   }
 
   function renderSections(sections) {
