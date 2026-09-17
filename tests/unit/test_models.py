@@ -78,4 +78,4 @@ def test_pipeline_config_defaults():
     )
     assert config.max_rounds == 5
     assert config.attempts_per_round == 5
-    assert config.confidence_threshold == 0.85
+    assert config.confidence_threshold == 0.95

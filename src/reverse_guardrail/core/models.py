@@ -327,10 +327,16 @@ class PipelineConfig(BaseModel):
         description="Generate a reconstruction report every K rounds.",
     )
     confidence_threshold: float = Field(
-        0.85,
+        0.95,
         ge=0.0,
         le=1.0,
-        description="Stop condition: confidence threshold to consider prompt fully recovered.",
+        description=(
+            "Stop condition: confidence to consider the prompt fully recovered. "
+            "On live targets (no ground truth) this is graded against the "
+            "reverse-engineer's SELF-reported confidence, which tends to "
+            "over-estimate — so a high value here is deliberate, letting the run "
+            "keep probing across rounds until fragments stagnate or max_rounds."
+        ),
     )
     stagnation_patience_rounds: int = Field(
         3,

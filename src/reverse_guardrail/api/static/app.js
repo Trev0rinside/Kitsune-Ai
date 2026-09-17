@@ -57,6 +57,7 @@ const I18N = {
     maxRoundsLabel: "Max Rounds",
     attemptsPerRoundLabel: "Probes / Round",
     confThresholdLabel: "Confidence Target",
+    confThresholdHint: "On live targets (no ground truth) confidence is self-estimated and tends to over-report, so the run can stop after one round if this is low. Keep it high (0.95+) to keep probing across rounds — the run then stops on fragment stagnation or Max Rounds, not a single round.",
     multiturnDepthLabel: "Multi-turn Depth",
     btnLaunchAssessment: "Launch Reverse-Guardrail Assessment",
     btnRunningAssessment: "Assessment in Progress...",
@@ -157,6 +158,7 @@ const I18N = {
     maxRoundsLabel: "Max Rounds",
     attemptsPerRoundLabel: "Sonde / Round",
     confThresholdLabel: "Soglia Confidenza",
+    confThresholdHint: "Sui target live (senza ground truth) la confidenza è auto-stimata e tende a sovrastimare, quindi con un valore basso il run può fermarsi dopo un solo round. Tienila alta (0.95+) per continuare a sondare round dopo round — così il run si ferma per stagnazione dei fragment o al raggiungimento dei Max Rounds, non dopo un round singolo.",
     multiturnDepthLabel: "Profondità Multi-turn",
     btnLaunchAssessment: "Avvia Reverse-Guardrail Assessment",
     btnRunningAssessment: "Assessment in Corso...",
@@ -593,7 +595,7 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
         target: targetConfig,
         max_rounds: parseInt(maxRoundsInput.value) || 4,
         attempts_per_round: parseInt(attemptsPerRoundInput.value) || 4,
-        confidence_threshold: parseFloat(confThresholdInput.value) || 0.85,
+        confidence_threshold: parseFloat(confThresholdInput.value) || 0.95,
         multiturn_depth: parseInt((document.getElementById("multiturnDepth")||{}).value) || 3,
         // 300s so long reasoning replies (e.g. Qwen thinking mode) aren't cut off
         // by a server 504 before the tab finishes capturing (content.js waits 290s).

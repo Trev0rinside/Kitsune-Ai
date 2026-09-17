@@ -297,7 +297,7 @@ async function launchRun(engagementId, requestedTargetUrl, params) {
       },
       max_rounds: Math.round(clamp(p.max_rounds, 1, 20, 4)),
       attempts_per_round: Math.round(clamp(p.attempts_per_round, 1, 15, 4)),
-      confidence_threshold: clamp(p.confidence_threshold, 0.1, 1.0, 0.85),
+      confidence_threshold: clamp(p.confidence_threshold, 0.1, 1.0, 0.95),
       multiturn_depth: Math.round(clamp(p.multiturn_depth, 1, 8, 3)),
       // 300s server cap > content.js 290s wait, so the tab returns first even for
       // long Qwen reasoning replies (server 504 would otherwise discard them).

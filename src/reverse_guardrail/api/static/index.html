@@ -305,13 +305,18 @@
           </div>
           <div class="form-group">
             <label for="confThreshold" data-i18n="confThresholdLabel">Confidence Target</label>
-            <input type="number" id="confThreshold" value="0.85" min="0.1" max="1.0" step="0.05">
+            <input type="number" id="confThreshold" value="0.95" min="0.1" max="1.0" step="0.05">
           </div>
           <div class="form-group">
             <label for="multiturnDepth" data-i18n="multiturnDepthLabel">Multi-turn Depth</label>
             <input type="number" id="multiturnDepth" value="3" min="1" max="8">
           </div>
         </div>
+        <p class="field-hint" data-i18n="confThresholdHint">
+          On live targets (no ground truth) confidence is self-estimated and tends to over-report,
+          so the run can stop after one round if this is low. Keep it high (0.95+) to keep probing
+          across rounds — the run then stops on fragment stagnation or Max Rounds, not a single round.
+        </p>
       </div>
 
       <div class="action-buttons-group">
