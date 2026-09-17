@@ -63,6 +63,7 @@ const I18N = {
     btnStopAssessment: "Stop",
     btnStoppingAssessment: "Stopping...",
     btnStoppedAssessment: "Stopped",
+    metricTargetSource: "Target",
     metricPipelineStatus: "Pipeline Status",
     metricCurrentRound: "Current Round",
     metricReconConfidence: "Reconstruction Confidence",
@@ -162,6 +163,7 @@ const I18N = {
     btnStopAssessment: "Stop",
     btnStoppingAssessment: "Interruzione...",
     btnStoppedAssessment: "Interrotto",
+    metricTargetSource: "Target",
     metricPipelineStatus: "Stato Pipeline",
     metricCurrentRound: "Round Corrente",
     metricReconConfidence: "Confidenza Ricostruzione",
@@ -251,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const httpOptions = document.getElementById('httpOptions');
   const urlGroup = document.getElementById('urlGroup');
 
+  const metricTarget = document.getElementById('metricTarget');
   const metricStatus = document.getElementById('metricStatus');
   const metricRound = document.getElementById('metricRound');
   const metricConfidence = document.getElementById('metricConfidence');
@@ -592,7 +595,9 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
         attempts_per_round: parseInt(attemptsPerRoundInput.value) || 4,
         confidence_threshold: parseFloat(confThresholdInput.value) || 0.85,
         multiturn_depth: parseInt((document.getElementById("multiturnDepth")||{}).value) || 3,
-        timeout_seconds: 180.0,
+        // 300s so long reasoning replies (e.g. Qwen thinking mode) aren't cut off
+        // by a server 504 before the tab finishes capturing (content.js waits 290s).
+        timeout_seconds: 300.0,
         // Mock is the offline benchmark: drive it with deterministic agents so it
         // runs instantly and self-contained, no external LLM round-trips.
         models: currentTargetMode === 'mock'
@@ -622,6 +627,14 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
     metricStatus.className = 'metric-value status-running';
     metricStatus.innerText = 'RUNNING';
     document.body.classList.add('is-running');
+
+    // Provenance: make it impossible to mistake a Mock benchmark for a real target.
+    if (metricTarget) {
+      const isMock = currentTargetMode === 'mock';
+      metricTarget.innerText = isMock ? '⚠ MOCK (offline)' : targetConfig.target_name;
+      metricTarget.title = targetConfig.target_name;
+      metricTarget.className = 'metric-value' + (isMock ? ' target-mock' : '');
+    }
 
     appendLog(`[Pipeline] Launching Reverse-Guardrail in ${currentTargetMode.toUpperCase()} mode...`, 'info');
 

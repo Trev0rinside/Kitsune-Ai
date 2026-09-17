@@ -84,9 +84,38 @@
       <span class="meta-val" id="lastSeen">never</span>
     </div>
 
+    <!-- Launch: start a run against the bound tab without leaving the popup -->
+    <div class="launch">
+      <label class="launch-label" for="engagementId">Engagement ID</label>
+      <input class="launch-input" id="engagementId" type="text" value="ENG-SEC-AUDIT-2026-001"
+             placeholder="ENG-…" autocomplete="off" spellcheck="false">
+
+      <span class="launch-label launch-sublabel">Probing &amp; Closed-Loop</span>
+      <div class="param-grid">
+        <div class="param">
+          <label for="maxRounds">Max Rounds</label>
+          <input type="number" id="maxRounds" value="4" min="1" max="20">
+        </div>
+        <div class="param">
+          <label for="attemptsPerRound">Probes / Round</label>
+          <input type="number" id="attemptsPerRound" value="4" min="1" max="15">
+        </div>
+        <div class="param">
+          <label for="confThreshold">Confidence</label>
+          <input type="number" id="confThreshold" value="0.85" min="0.1" max="1.0" step="0.05">
+        </div>
+        <div class="param">
+          <label for="multiturnDepth">Multi-turn Depth</label>
+          <input type="number" id="multiturnDepth" value="3" min="1" max="8">
+        </div>
+      </div>
+
+      <button class="btn-launch" id="btnLaunch">Launch test on bound tab</button>
+      <span class="launch-hint" id="launchHint">Probes the bound tab in extension mode.</span>
+    </div>
+
     <p class="notice" id="noticeText">
-      Open the target chat in a Chrome tab, then start the assessment from the Kitsune dashboard at
-      <strong>localhost:8888</strong>.
+      Or configure a full assessment from the Kitsune dashboard at <strong>localhost:8888</strong>.
     </p>
 
     <footer class="footer">

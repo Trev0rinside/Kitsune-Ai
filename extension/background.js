@@ -5,6 +5,7 @@
  */
 
 const WS_URL = "ws://127.0.0.1:8888/ws/relay";
+const API_BASE = "http://127.0.0.1:8888";
 let ws = null;
 let isConnected = false;
 let reconnectTimer = null;
@@ -18,7 +19,11 @@ const relayStats = {
   lastLatencyMs: null,
   lastAt: null,
   lastError: null,
-  busy: false
+  busy: false,
+  // A run launched from the popup. /pipeline/start is synchronous (minutes), so
+  // the worker holds the fetch while probes stream; the popup shows this flag.
+  runInFlight: false,
+  lastRunError: null
 };
 
 // --- Initialize WebSocket Connection ---
@@ -254,8 +259,126 @@ function markProbeFinished(errorMessage) {
   chrome.action.setBadgeText({ text: isConnected ? "ON" : "OFF" });
 }
 
+// --- Launch a run against the bound tab (one-click from the popup) ---
+async function launchRun(engagementId, requestedTargetUrl, params) {
+  if (relayStats.runInFlight) {
+    return { ok: false, error: "A run is already in flight." };
+  }
+  if (!isConnected) {
+    return { ok: false, error: "Engine not connected. Start the Kitsune server on :8888." };
+  }
+  const engagement = (engagementId || "").trim();
+  if (!engagement) {
+    return { ok: false, error: "Engagement ID is required (scope authorization)." };
+  }
+
+  const targetTab = await findTargetTab(requestedTargetUrl);
+  if (!targetTab) {
+    return { ok: false, error: "No eligible target tab open in Chrome." };
+  }
+
+  // Extension-mode config. authorized:true + engagement_id is the human's scope
+  // assertion (same as the dashboard checkbox); the API still enforces the gate.
+  // Probing / closed-loop knobs from the popup; fall back to sane defaults and
+  // clamp to the same ranges the dashboard enforces.
+  const p = params || {};
+  const clamp = (v, lo, hi, dflt) =>
+    Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : dflt;
+
+  const payload = {
+    config: {
+      target: {
+        authorized: true,
+        engagement_id: engagement,
+        target_name: `Chrome Extension Relay (${targetTab.url})`,
+        target_mode: "extension",
+        target_url: targetTab.url,
+        custom_headers: {}
+      },
+      max_rounds: Math.round(clamp(p.max_rounds, 1, 20, 4)),
+      attempts_per_round: Math.round(clamp(p.attempts_per_round, 1, 15, 4)),
+      confidence_threshold: clamp(p.confidence_threshold, 0.1, 1.0, 0.85),
+      multiturn_depth: Math.round(clamp(p.multiturn_depth, 1, 8, 3)),
+      // 300s server cap > content.js 290s wait, so the tab returns first even for
+      // long Qwen reasoning replies (server 504 would otherwise discard them).
+      timeout_seconds: 300.0,
+      models: {
+        tester: "deepseek-v4-flash",
+        inspectioner: "deepseek-v4-flash",
+        reverse_engineer: "deepseek-v4-flash",
+        embedding: "models/text-embedding-004"
+      }
+    }
+  };
+
+  relayStats.runInFlight = true;
+  relayStats.lastRunError = null;
+  chrome.action.setBadgeText({ text: "RUN" });
+  console.log("[Kitsune Relay] Launching run from popup on", targetTab.url);
+
+  // Fire-and-forget: /pipeline/start blocks until the run ends (minutes). We do
+  // NOT await it before returning to the popup — the popup only needs to know the
+  // launch was accepted; progress shows via relay telemetry.
+  fetch(`${API_BASE}/api/v1/pipeline/start`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(async (r) => {
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${r.status}`);
+      }
+      return r.json();
+    })
+    .then((data) => {
+      console.log("[Kitsune Relay] Run finished:", data.run_id, data.status);
+    })
+    .catch((err) => {
+      console.error("[Kitsune Relay] Run failed:", err);
+      relayStats.lastRunError = err.message || String(err);
+    })
+    .finally(() => {
+      relayStats.runInFlight = false;
+      chrome.action.setBadgeText({ text: isConnected ? "ON" : "OFF" });
+    });
+
+  return { ok: true, target: targetTab.url, engagement_id: engagement };
+}
+
 // --- Listen to Messages from Extension Popup ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Content scripts cannot reliably call localhost under the page's CSP, so the
+  // service worker makes the calibration call on their behalf.
+  if (request.type === "CALIBRATE_CAPTURE") {
+    fetch(`${API_BASE}/api/v1/relay/calibrate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: request.url || "",
+        dom_snapshot: request.dom_snapshot || "",
+        probe_text: request.probe_text || ""
+      })
+    })
+      .then((r) => r.json())
+      .then((profile) => {
+        console.log("[Kitsune Relay] Capture calibration result:", profile);
+        sendResponse({ ok: true, profile: profile });
+      })
+      .catch((err) => {
+        console.warn("[Kitsune Relay] Capture calibration failed:", err);
+        sendResponse({ ok: false });
+      });
+    return true; // async sendResponse
+  }
+
+  if (request.type === "LAUNCH_RUN") {
+    launchRun(request.engagement_id, request.target_url, request.params)
+      .then((r) => sendResponse(r))
+      .catch((err) => sendResponse({ ok: false, error: err.message || String(err) }));
+    return true; // async sendResponse
+  }
+
   if (request.type === "GET_STATUS") {
     findTargetTab().then((tab) => {
       sendResponse({

@@ -10,6 +10,25 @@ from reverse_guardrail.core.logger import logger
 load_dotenv()
 
 
+def extract_json(text: str) -> str:
+    """Pull the JSON object out of an LLM reply robustly.
+
+    Only unwraps a code fence when the whole reply is fenced; otherwise it slices
+    from the first '{' to the last '}'. This tolerates ``` appearing INSIDE a
+    payload string (e.g. a probe that asks the target to complete a code block),
+    which naive fence-splitting mangled into a parse failure.
+    """
+    t = text.strip()
+    if t.startswith("```"):
+        parts = t.split("```")
+        if len(parts) >= 2:
+            t = re.sub(r"^json\s*", "", parts[1].strip())
+    start, end = t.find("{"), t.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        return t[start : end + 1]
+    return t
+
+
 class BaseLLMClient(abc.ABC):
     """Abstract interface for LLM backends used by agents."""
 

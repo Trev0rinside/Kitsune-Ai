@@ -15,6 +15,8 @@ from reverse_guardrail.orchestrator.runner import PipelineRunner
 from reverse_guardrail.storage.sqlite_store import SQLiteGraphVectorStore
 
 from reverse_guardrail.core.relay_manager import relay_manager
+from reverse_guardrail.core.capture_calibrator import calibrate_selectors
+from reverse_guardrail.core.logger import logger
 
 router = APIRouter(prefix="/api/v1", tags=["Reverse Guardrail"])
 
@@ -49,6 +51,35 @@ async def health_check() -> Dict[str, str]:
 async def get_relay_status() -> Dict[str, Any]:
     """Get connection and target tab status of the Chrome Extension Relay."""
     return relay_manager.get_status()
+
+
+class CalibrateCaptureRequest(BaseModel):
+    url: str = ""
+    dom_snapshot: str = ""
+    probe_text: str = ""
+
+
+class CalibrateCaptureResponse(BaseModel):
+    assistant_selector: Optional[str] = None
+    generating_selector: Optional[str] = None
+
+
+@router.post("/relay/calibrate", response_model=CalibrateCaptureResponse)
+async def calibrate_capture(request: CalibrateCaptureRequest) -> CalibrateCaptureResponse:
+    """Learn the capture selectors for the site the extension is probing.
+
+    Read-only DOM analysis — this sends nothing to the target, so it is not a
+    probe and carries no scope-gate implications of its own.
+    """
+    result = await calibrate_selectors(
+        dom_snapshot=request.dom_snapshot,
+        probe_text=request.probe_text,
+        url=request.url,
+    )
+    logger.info(
+        f"[calibrate] url={request.url} snapshot_len={len(request.dom_snapshot)} -> {result}"
+    )
+    return CalibrateCaptureResponse(**result)
 
 
 @router.get("/audit/logs", response_model=List[AuditLogEntry])

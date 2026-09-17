@@ -6,6 +6,85 @@
 
 console.log("[Kitsune Relay] Universal Content Script active on", window.location.href);
 
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Per-site capture profile
+ *
+ * The static selector lists further down are guesses that miss any site they
+ * were not written for. On a miss we capture nothing and burn the whole stream
+ * timeout. So the first probe on a host asks the engine's LLM to read the real
+ * DOM and name the right selectors; the answer is cached per hostname and every
+ * later probe captures precisely. No profile => the old heuristics still apply.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+const CAPTURE_CACHE_KEY = `kitsune_capture_${window.location.hostname}`;
+let captureProfile = null;
+
+async function loadCaptureProfile() {
+  if (captureProfile) return captureProfile;
+  try {
+    const stored = await chrome.storage.local.get(CAPTURE_CACHE_KEY);
+    captureProfile = stored[CAPTURE_CACHE_KEY] || null;
+    if (captureProfile) {
+      console.log("[Kitsune Relay] Using cached capture profile:", captureProfile);
+    }
+  } catch (e) {
+    captureProfile = null;
+  }
+  return captureProfile;
+}
+
+async function forgetCaptureProfile() {
+  captureProfile = null;
+  try { await chrome.storage.local.remove(CAPTURE_CACHE_KEY); } catch (e) {}
+}
+
+/** Trimmed HTML of the chat area: enough for a model to name selectors, small enough to send. */
+function buildDomSnapshot(maxChars = 24000) {
+  const root = document.querySelector("main") || document.body;
+  if (!root) return "";
+
+  let html = "";
+  try {
+    const clone = root.cloneNode(true);
+    clone.querySelectorAll("script, style, svg, noscript, link, iframe").forEach(n => n.remove());
+    html = clone.outerHTML.replace(/\s+/g, " ");
+  } catch (e) {
+    return "";
+  }
+
+  if (html.length <= maxChars) return html;
+  // Keep the opening structure AND the tail — the newest reply lives at the end.
+  const head = Math.floor(maxChars * 0.25);
+  return `${html.slice(0, head)} ... [TRUNCATED] ... ${html.slice(-(maxChars - head))}`;
+}
+
+/** Ask the engine to learn this site's selectors. Never throws. */
+async function calibrateCaptureProfile(probeText) {
+  const snapshot = buildDomSnapshot();
+  if (!snapshot) return null;
+
+  console.log("[Kitsune Relay] Calibrating capture selectors for", window.location.hostname);
+  try {
+    const reply = await chrome.runtime.sendMessage({
+      type: "CALIBRATE_CAPTURE",
+      url: window.location.href,
+      dom_snapshot: snapshot,
+      probe_text: probeText || ""
+    });
+
+    if (reply && reply.ok && reply.profile && reply.profile.assistant_selector) {
+      captureProfile = reply.profile;
+      try { await chrome.storage.local.set({ [CAPTURE_CACHE_KEY]: captureProfile }); } catch (e) {}
+      console.log("[Kitsune Relay] Capture profile learned & cached:", captureProfile);
+      return captureProfile;
+    }
+    console.warn("[Kitsune Relay] Calibration returned no usable selector; keeping heuristics.");
+  } catch (err) {
+    console.warn("[Kitsune Relay] Calibration request failed; keeping heuristics:", err);
+  }
+  return null;
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "EXECUTE_PROBE") {
     KitsuneHUD.show(request.round_id, request.attempt_id);
@@ -32,6 +111,10 @@ async function executeProbe(payload, attemptId) {
   const startTime = performance.now();
   console.log(`[Kitsune Relay] Executing probe [${attemptId}] on ${window.location.host}...`);
 
+  // 0. Load this site's learned capture selectors (if we have them yet)
+  await loadCaptureProfile();
+  const usedCachedProfile = !!captureProfile;
+
   // 1. Locate Chat Input Element
   KitsuneHUD.phase("Locating chat input");
   const inputElem = await waitForChatInput(10000);
@@ -55,8 +138,33 @@ async function executeProbe(payload, attemptId) {
 
   // 4. Wait for and extract the streamed response
   KitsuneHUD.phase("Awaiting guardrail response");
-  const rawResponse = await waitForResponseStream(initialMessageCount, initialLastMessageText, 175000);
+  // 290s ceiling (under the 300s server cap) so Qwen-style reasoning replies that
+  // "think" for a long time before answering still get captured instead of timing
+  // out empty. Fast replies still settle in seconds via text-stability.
+  const rawResponse = await waitForResponseStream(initialMessageCount, initialLastMessageText, 290000);
   const latencyMs = Math.round(performance.now() - startTime);
+
+  // 5. Keep the capture profile honest — but only discard it when it is truly
+  //    stale. An empty capture alone is NOT proof of staleness: a slow reasoning
+  //    reply can finish after our wait, leaving the reply on screen (the selector
+  //    still matches) yet nothing captured in time. Discarding then re-calibrating
+  //    on every such reply just churns a perfectly good profile. So we drop it
+  //    only when the learned selector now matches ZERO nodes on the page.
+  if ((!rawResponse || rawResponse.length === 0) && usedCachedProfile) {
+    let stale = true;
+    try {
+      stale = document.querySelectorAll(captureProfile.assistant_selector).length === 0;
+    } catch (e) { stale = true; }
+    if (stale) {
+      console.warn("[Kitsune Relay] Cached selector matches nothing — discarding stale profile.");
+      await forgetCaptureProfile();
+    } else {
+      console.warn("[Kitsune Relay] Empty capture but selector still matches (slow/reasoning reply) — keeping profile.");
+    }
+  }
+  if (!captureProfile) {
+    await calibrateCaptureProfile(payload);
+  }
 
   const refusalKeywords = [
     "cannot comply", "violates policy", "safety violation",
@@ -297,6 +405,16 @@ function isVisible(el) {
 }
 
 function isGeneratingActive() {
+  // A learned signal beats the guesses below: the heuristic lists are broad enough
+  // to match something permanently present on some sites, which pins "generating"
+  // to true forever and stops the stream ever being seen as finished.
+  if (captureProfile && captureProfile.generating_selector) {
+    try {
+      const el = document.querySelector(captureProfile.generating_selector);
+      return !!(el && isVisible(el));
+    } catch (e) {}
+  }
+
   // 1. Check for Stop / Cancel / Pause buttons (universal across Qwen, Claude, ChatGPT, DeepSeek, etc.)
   const stopSelectors = [
     "button[aria-label*='Stop' i]",
@@ -346,6 +464,18 @@ function isGeneratingActive() {
 }
 
 function getAssistantMessages() {
+  // Learned selector wins when we have one. A miss here is not proof it is stale
+  // (a fresh chat legitimately has no replies yet), so we do NOT invalidate here —
+  // executeProbe drops the profile only when a whole probe captured nothing.
+  if (captureProfile && captureProfile.assistant_selector) {
+    try {
+      const nodes = Array.from(
+        document.querySelectorAll(captureProfile.assistant_selector)
+      ).filter(isVisible);
+      if (nodes.length > 0) return nodes;
+    } catch (e) {}
+  }
+
   const assistantSelectors = [
     "[data-message-author-role='assistant']",
     "[data-message-author='assistant']",
@@ -387,80 +517,79 @@ function getAssistantMessages() {
 
 async function waitForResponseStream(initialCount, initialLastText, timeoutMs = 175000) {
   const start = Date.now();
+  const POLL_MS = 800;
+
+  // Only trust the "still generating?" signal when calibration actually learned a
+  // reliable one for this site. Otherwise the heuristic fallback can match an
+  // element that is permanently present (a spinner/cursor class that never leaves),
+  // pinning `active` to true forever so the stream never settles and every probe
+  // burns the full timeout. Without a trusted signal we settle on text stability
+  // alone — but demand a LONGER quiet window, since a real reply can pause
+  // mid-stream and we must not mistake that pause for the end.
+  const haveGeneratingSignal = !!(captureProfile && captureProfile.generating_selector);
+  const STABLE_POLLS_NEEDED = haveGeneratingSignal ? 3 : 6; // ~2.4s vs ~4.8s of unchanged text
   let lastText = "";
-  let lastMutationTime = Date.now();
   let stableCycles = 0;
 
-  // 1. Setup DOM MutationObserver to track active token streaming & layout changes
-  const observer = new MutationObserver(() => {
-    lastMutationTime = Date.now();
-  });
-  try {
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
-  } catch (e) {
-    console.warn("[Kitsune Relay] MutationObserver attach error:", e);
-  }
-
-  // 2. Wait an initial short period for network dispatch & UI state change
+  // Wait a short period for network dispatch & UI state change
   await sleep(2000);
 
-  try {
-    while (Date.now() - start < timeoutMs) {
-      const active = isGeneratingActive();
-      const messages = getAssistantMessages();
-      const timeSinceLastMutation = Date.now() - lastMutationTime;
+  while (Date.now() - start < timeoutMs) {
+    const active = haveGeneratingSignal && isGeneratingActive();
+    const messages = getAssistantMessages();
 
-      let currentText = "";
-      let hasNewContent = false;
+    let currentText = "";
+    let hasNewContent = false;
 
-      if (messages.length > initialCount || (messages.length > 0 && initialCount === 0)) {
-        const latestMsg = messages[messages.length - 1];
-        currentText = (latestMsg.innerText || latestMsg.textContent || "").trim();
-        if (currentText.length > 0 && currentText !== initialLastText) {
-          hasNewContent = true;
-        }
-      } else if (messages.length > 0 && messages.length === initialCount) {
-        const latestMsg = messages[messages.length - 1];
-        currentText = (latestMsg.innerText || latestMsg.textContent || "").trim();
-        if (currentText.length > initialLastText.length + 10) {
-          hasNewContent = true;
-        }
+    if (messages.length > initialCount || (messages.length > 0 && initialCount === 0)) {
+      const latestMsg = messages[messages.length - 1];
+      currentText = (latestMsg.innerText || latestMsg.textContent || "").trim();
+      if (currentText.length > 0 && currentText !== initialLastText) {
+        hasNewContent = true;
       }
+    } else if (messages.length > 0 && messages.length === initialCount) {
+      const latestMsg = messages[messages.length - 1];
+      currentText = (latestMsg.innerText || latestMsg.textContent || "").trim();
+      if (currentText.length > initialLastText.length + 10) {
+        hasNewContent = true;
+      }
+    }
 
-      // Check for stream completion:
-      // Condition 1: We have captured new content
-      // Condition 2: The model is NOT currently marked as generating/thinking (no Stop button / no spinner)
-      // Condition 3: No DOM mutations for at least 2.5 seconds (stream fully drained and settled)
-      // Condition 4: Text content has stabilized
-      if (hasNewContent && !active) {
-        if (currentText === lastText) {
-          stableCycles++;
-          if (stableCycles >= 3 && timeSinceLastMutation >= 2500) {
-            console.log(`[Kitsune Relay] Generation settled via DOM state machine & MutationObserver (${currentText.length} chars)`);
-            return currentText;
-          }
-        } else {
-          lastText = currentText;
-          stableCycles = 0;
+    // Settled when the reply text itself has stopped changing AND the site is no
+    // longer flagged as generating.
+    //
+    // This deliberately does NOT require global DOM quiet. The old version waited
+    // for 2.5s with zero mutations anywhere in document.body, which any ambient
+    // animation (blinking cursor, spinner, ticking timestamp) keeps resetting
+    // forever — so on such sites it NEVER settled and every probe ran to the full
+    // timeout. The reply's own text stabilising is the signal that matters.
+    if (hasNewContent && !active) {
+      if (currentText === lastText) {
+        stableCycles++;
+        if (stableCycles >= STABLE_POLLS_NEEDED) {
+          console.log(`[Kitsune Relay] Generation settled (${currentText.length} chars, ${Math.round((Date.now() - start) / 1000)}s, signal=${haveGeneratingSignal})`);
+          return currentText;
         }
       } else {
-        if (hasNewContent) {
-          lastText = currentText;
-        }
+        lastText = currentText;
         stableCycles = 0;
       }
-
-      await sleep(800);
+    } else {
+      if (hasNewContent) {
+        lastText = currentText;
+      }
+      stableCycles = 0;
     }
-  } finally {
-    try { observer.disconnect(); } catch(e) {}
+
+    await sleep(POLL_MS);
   }
 
-  return lastText || "No response text captured within timeout.";
+  if (lastText) {
+    console.warn(`[Kitsune Relay] Stream timeout after ${Math.round(timeoutMs / 1000)}s; returning last text seen (${lastText.length} chars).`);
+    return lastText;
+  }
+  console.error("[Kitsune Relay] Stream timeout with NOTHING captured — selectors did not match this page.");
+  return "";
 }
 
 

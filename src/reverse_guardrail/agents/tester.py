@@ -6,7 +6,7 @@ import re
 from typing import Dict, List, Optional, Tuple
 from uuid import uuid4
 from reverse_guardrail.agents.base import BaseAgent
-from reverse_guardrail.core.llm_provider import MockLLMClient
+from reverse_guardrail.core.llm_provider import MockLLMClient, extract_json
 from reverse_guardrail.core.models import (
     GuardrailResponse,
     InjectionAttempt,
@@ -20,23 +20,8 @@ def _norm_payload(text: str) -> str:
     return " ".join(text.lower().split())
 
 
-def _extract_json(text: str) -> str:
-    """Pull the JSON object out of an LLM reply robustly.
-
-    Only unwraps a code fence when the whole reply is fenced; otherwise it slices
-    from the first '{' to the last '}'. This tolerates ``` appearing INSIDE a
-    payload string (e.g. a probe that asks the target to complete a code block),
-    which naive fence-splitting mangled into a parse failure.
-    """
-    t = text.strip()
-    if t.startswith("```"):
-        parts = t.split("```")
-        if len(parts) >= 2:
-            t = re.sub(r"^json\s*", "", parts[1].strip())
-    start, end = t.find("{"), t.rfind("}")
-    if start != -1 and end != -1 and end > start:
-        return t[start : end + 1]
-    return t
+# Shared with the capture calibrator — one JSON-extraction implementation, in core.
+_extract_json = extract_json
 
 
 TESTER_SYSTEM_PROMPT = """You are an expert AI Security Red-Teamer specializing in subtle, non-aggressive soft-injection techniques.

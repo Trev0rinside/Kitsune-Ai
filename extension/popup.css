@@ -283,6 +283,98 @@ body {
   word-break: break-all;
 }
 
+/* ── Launch ── */
+
+.launch {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 14px 0 12px;
+  padding: 12px;
+  border: 1px solid var(--hair);
+  border-left: 2px solid var(--shu);
+  border-radius: 3px;
+  background: rgba(6, 11, 20, 0.5);
+}
+
+.launch-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kin);
+}
+
+.launch-input {
+  padding: 7px 9px;
+  border: 1px solid var(--ai-3);
+  border-radius: 3px;
+  background: var(--sumi-0);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.03em;
+}
+.launch-input:focus-visible { outline: 2px solid var(--hi); outline-offset: 1px; border-color: var(--hi); }
+
+.launch-sublabel { margin-top: 3px; }
+
+.param-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.param {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.param label {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.param input {
+  padding: 5px 7px;
+  border: 1px solid var(--ai-3);
+  border-radius: 3px;
+  background: var(--sumi-0);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+.param input:focus-visible { outline: 2px solid var(--hi); outline-offset: 1px; border-color: var(--hi); }
+
+.btn-launch {
+  margin-top: 2px;
+  padding: 9px 12px;
+  border: 1px solid var(--shu);
+  border-radius: 3px;
+  background: var(--shu);
+  color: var(--sumi-0);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+}
+.btn-launch:hover:not(:disabled) { background: var(--hi); border-color: var(--hi); }
+.btn-launch:focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
+.btn-launch:disabled { opacity: 0.45; cursor: not-allowed; background: var(--ai-3); border-color: var(--ai-3); color: var(--text-mute); }
+
+.launch-hint {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
 .notice {
   margin: 12px 0 14px;
   padding-left: 11px;

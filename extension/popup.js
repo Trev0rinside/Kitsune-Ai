@@ -9,6 +9,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const statLatency = document.getElementById('statLatency');
   const lastSeen = document.getElementById('lastSeen');
   const btnRefresh = document.getElementById('btnRefresh');
+  const btnLaunch = document.getElementById('btnLaunch');
+  const engagementId = document.getElementById('engagementId');
+  const launchHint = document.getElementById('launchHint');
+
+  let runInFlight = false;
 
   function ago(ts) {
     if (!ts) return 'never';
@@ -40,9 +45,15 @@ document.addEventListener('DOMContentLoaded', () => {
         setState('offline', 'Waiting for engine');
       } else if (stats.busy) {
         setState('busy', `Probing${stats.lastRound ? ` · round ${stats.lastRound}` : ''}`);
+      } else if (stats.runInFlight) {
+        setState('busy', 'Run in flight');
       } else {
         setState('online', 'Linked to engine');
       }
+
+      runInFlight = !!stats.runInFlight;
+      updateLaunchButton(res.connected);
+      if (stats.lastRunError) launchHint.innerText = `Last run: ${stats.lastRunError}`;
 
       if (wsEndpoint && res.wsUrl) wsEndpoint.innerText = res.wsUrl.replace(/^ws:\/\//, '');
 
@@ -63,6 +74,60 @@ document.addEventListener('DOMContentLoaded', () => {
       statRefusals.innerText = stats.refusals || 0;
       statLatency.innerText = stats.lastLatencyMs ? `${(stats.lastLatencyMs / 1000).toFixed(1)}s` : '—';
       lastSeen.innerText = stats.lastError ? stats.lastError : ago(stats.lastAt);
+    });
+  }
+
+  function updateLaunchButton(connected) {
+    if (!btnLaunch) return;
+    const disabled = runInFlight || !connected;
+    btnLaunch.disabled = disabled;
+    btnLaunch.innerText = runInFlight ? 'Run in flight…' : 'Launch test on bound tab';
+  }
+
+  if (btnLaunch) {
+    btnLaunch.addEventListener('click', () => {
+      const engagement = (engagementId.value || '').trim();
+      if (!engagement) {
+        launchHint.innerText = 'Engagement ID is required.';
+        engagementId.focus();
+        return;
+      }
+      btnLaunch.disabled = true;
+      btnLaunch.innerText = 'Launching…';
+      launchHint.innerText = 'Sending to engine…';
+
+      const num = (id) => {
+        const el = document.getElementById(id);
+        const v = el ? parseFloat(el.value) : NaN;
+        return Number.isFinite(v) ? v : null;
+      };
+
+      chrome.runtime.sendMessage(
+        {
+          type: 'LAUNCH_RUN',
+          engagement_id: engagement,
+          params: {
+            max_rounds: num('maxRounds'),
+            attempts_per_round: num('attemptsPerRound'),
+            confidence_threshold: num('confThreshold'),
+            multiturn_depth: num('multiturnDepth')
+          }
+        },
+        (res) => {
+          if (chrome.runtime.lastError || !res) {
+            launchHint.innerText = 'Service worker asleep — retry.';
+            updateStatus();
+            return;
+          }
+          if (res.ok) {
+            runInFlight = true;
+            launchHint.innerText = `Launched on ${res.target || 'bound tab'}.`;
+          } else {
+            launchHint.innerText = res.error || 'Launch failed.';
+          }
+          updateStatus();
+        }
+      );
     });
   }
 

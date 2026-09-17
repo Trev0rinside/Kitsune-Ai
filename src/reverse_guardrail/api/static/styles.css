@@ -994,6 +994,19 @@ textarea { resize: vertical; line-height: 1.6; min-height: 74px; }
 }
 .metric-value.highlight { color: var(--hi); text-shadow: 0 0 26px rgba(255, 196, 107, 0.45); }
 
+/* Mock-run provenance: unmistakably NOT a real target. */
+.metric-value.target-mock {
+  color: var(--shu);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border: 1px solid var(--shu);
+  border-radius: 4px;
+  background: var(--shu-soft);
+}
+#metricTarget { font-size: 1rem; word-break: break-word; }
+
 .status-idle      { color: var(--text-mute); }
 .status-running   { color: var(--hi); animation: pulse 1.6s ease-in-out infinite; }
 .status-paused    { color: var(--sev-medium); }
