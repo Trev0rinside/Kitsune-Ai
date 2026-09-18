@@ -528,6 +528,14 @@ async function waitForResponseStream(initialCount, initialLastText, timeoutMs = 
   // mid-stream and we must not mistake that pause for the end.
   const haveGeneratingSignal = !!(captureProfile && captureProfile.generating_selector);
   const STABLE_POLLS_NEEDED = haveGeneratingSignal ? 3 : 6; // ~2.4s vs ~4.8s of unchanged text
+  // Early "no-response" cutoff: on a hard target (e.g. ChatGPT) an aggressive
+  // probe is often silently ignored — no assistant message, no generating
+  // indicator, ever. Rather than burn the full timeout on nothing, bail out once
+  // a grace window passes with no sign of activity. Any activity (new text OR a
+  // stop/thinking indicator) cancels the cutoff and we wait normally, so a slow
+  // reasoning reply that shows a "thinking" state is never cut short.
+  const NO_RESPONSE_GRACE_MS = 30000;
+  let sawActivity = false;
   let lastText = "";
   let stableCycles = 0;
 
@@ -535,7 +543,8 @@ async function waitForResponseStream(initialCount, initialLastText, timeoutMs = 
   await sleep(2000);
 
   while (Date.now() - start < timeoutMs) {
-    const active = haveGeneratingSignal && isGeneratingActive();
+    const rawGenerating = isGeneratingActive();
+    const active = haveGeneratingSignal && rawGenerating;
     const messages = getAssistantMessages();
 
     let currentText = "";
@@ -553,6 +562,17 @@ async function waitForResponseStream(initialCount, initialLastText, timeoutMs = 
       if (currentText.length > initialLastText.length + 10) {
         hasNewContent = true;
       }
+    }
+
+    // Track any sign the target is working; once seen, the no-response cutoff is
+    // disabled and we wait for the reply to complete normally.
+    if (hasNewContent || rawGenerating) sawActivity = true;
+
+    // No-response cutoff: grace window elapsed with zero activity => the target
+    // silently ignored this probe. Return empty now instead of waiting ~290s.
+    if (!sawActivity && (Date.now() - start) > NO_RESPONSE_GRACE_MS) {
+      console.warn(`[Kitsune Relay] No response within ${Math.round(NO_RESPONSE_GRACE_MS / 1000)}s and no activity — treating as no-response (target likely ignored this probe).`);
+      return "";
     }
 
     // Settled when the reply text itself has stopped changing AND the site is no
