@@ -61,6 +61,7 @@ const I18N = {
     multiturnDepthLabel: "Multi-turn Depth",
     btnLaunchAssessment: "Launch Reverse-Guardrail Assessment",
     btnReset: "Reset view",
+    btnReport: "📄 Generate PDF Report",
     btnRunningAssessment: "Assessment in Progress...",
     btnStopAssessment: "Stop",
     btnStoppingAssessment: "Stopping...",
@@ -163,6 +164,7 @@ const I18N = {
     multiturnDepthLabel: "Profondità Multi-turn",
     btnLaunchAssessment: "Avvia Reverse-Guardrail Assessment",
     btnReset: "Azzera vista",
+    btnReport: "📄 Genera Report PDF",
     btnRunningAssessment: "Assessment in Corso...",
     btnStopAssessment: "Stop",
     btnStoppingAssessment: "Interruzione...",
@@ -961,6 +963,180 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
       activeRunId = null;
       location.reload();
     });
+  }
+
+  // --- Generate a printable PDF security report for the provider ---
+  // Pulls the run's reconstruction + vulnerabilities + hardening, renders a clean
+  // print document in a new window, and triggers the browser's native "Save as
+  // PDF". No dependency, offline, vector text. The report is remediation-focused:
+  // what leaked, why it's a risk, and the hardened prompt + fixes to deploy.
+  const btnReport = document.getElementById('btnReport');
+  if (btnReport) {
+    btnReport.addEventListener('click', () => generateReport());
+  }
+
+  async function generateReport() {
+    if (!activeRunId) {
+      alert(currentLang === 'en'
+        ? 'Run an assessment first — there is no report to generate yet.'
+        : 'Esegui prima un assessment — non c\'è ancora un report da generare.');
+      return;
+    }
+    btnReport.disabled = true;
+    const original = btnReport.innerText;
+    btnReport.innerText = currentLang === 'en' ? 'Building…' : 'Generazione…';
+    try {
+      const [statusRes, reportRes, vulnRes, hardenRes] = await Promise.all([
+        fetch(`/api/v1/pipeline/${activeRunId}/status`),
+        fetch(`/api/v1/pipeline/${activeRunId}/report`),
+        fetch(`/api/v1/pipeline/${activeRunId}/vulnerabilities`),
+        fetch(`/api/v1/pipeline/${activeRunId}/hardening`)
+      ]);
+      const status = statusRes.ok ? await statusRes.json() : {};
+      const report = reportRes.ok ? await reportRes.json() : {};
+      const vulns = vulnRes.ok ? await vulnRes.json() : {};
+      const harden = hardenRes.ok ? await hardenRes.json() : {};
+
+      const html = buildReportHtml({ status, report, vulns, harden });
+      const w = window.open('', '_blank');
+      if (!w) {
+        alert(currentLang === 'en'
+          ? 'Popup blocked — allow popups for this page to generate the report.'
+          : 'Popup bloccato — consenti i popup per questa pagina per generare il report.');
+        return;
+      }
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+      // Give the new document a moment to lay out before invoking print.
+      w.onload = () => setTimeout(() => { try { w.print(); } catch (e) {} }, 350);
+      appendLog(`[Report] Generated PDF report for ${activeRunId}.`, 'success');
+    } catch (e) {
+      appendLog(`[Report] Failed to generate report: ${e.message}`, 'error');
+      alert('Report generation failed: ' + e.message);
+    } finally {
+      btnReport.disabled = false;
+      btnReport.innerText = original;
+    }
+  }
+
+  function buildReportHtml({ status, report, vulns, harden }) {
+    const esc = escapeHtml;
+    const pct = (v) => `${Math.round((v || 0) * 100)}`;
+    const now = new Date();
+    const target = (metricTarget && metricTarget.title) || (metricTarget && metricTarget.innerText) || activeRunId;
+    const risk = (vulns.overall_risk_rating || 'UNKNOWN').toUpperCase();
+    const vList = vulns.vulnerabilities || [];
+    const rems = harden.remediations || [];
+    const archRecs = harden.architectural_recommendations || [];
+    const sections = report.covered_sections || [];
+    const gaps = report.gaps || [];
+
+    const vulnRows = vList.map(v => `
+      <div class="card sev-${(v.severity || 'low').toLowerCase()}">
+        <div class="card-head">
+          <span class="sev">${esc((v.severity || '').toUpperCase())}</span>
+          <span class="ctitle">${esc(v.title || v.category || 'Vulnerability')}</span>
+        </div>
+        <p>${esc(v.description || '')}</p>
+        ${v.affected_section ? `<p class="meta">Affected section: <code>${esc(v.affected_section)}</code></p>` : ''}
+        ${v.owasp_reference ? `<p class="meta">Reference: ${esc(v.owasp_reference)}</p>` : ''}
+        ${v.risk_explanation ? `<p class="risk"><strong>Risk:</strong> ${esc(v.risk_explanation)}</p>` : ''}
+      </div>`).join('') || '<p class="muted">No structural vulnerabilities detected.</p>';
+
+    const remRows = rems.map(r => `
+      <div class="card">
+        <div class="card-head"><span class="ctitle">Section: ${esc(r.affected_section || '')}</span></div>
+        <div class="diff">
+          <div class="diff-col"><div class="diff-label">Original (exposed)</div><pre>${esc(r.original_text || '')}</pre></div>
+          <div class="diff-col"><div class="diff-label">Hardened</div><pre>${esc(r.hardened_text || '')}</pre></div>
+        </div>
+        ${r.rationale ? `<p class="risk"><strong>Rationale:</strong> ${esc(r.rationale)}</p>` : ''}
+      </div>`).join('') || '<p class="muted">No section-level remediations required.</p>';
+
+    const sectionRows = sections.map(s => `
+      <div class="card">
+        <div class="card-head"><span class="ctitle">${esc(s.section_name || 'Section')}</span><span class="conf">${pct(s.confidence)}%</span></div>
+        <p>${esc(s.inferred_content || '')}</p>
+      </div>`).join('') || '';
+
+    return `<!DOCTYPE html><html lang="${currentLang}"><head><meta charset="UTF-8">
+<title>Kitsune Security Report — ${esc(activeRunId)}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1a1f2b; margin: 0; padding: 36px 44px; line-height: 1.55; }
+  h1 { font-size: 22px; margin: 0 0 2px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.06em; color: #b3441f; border-bottom: 2px solid #e2c14e; padding-bottom: 5px; margin: 26px 0 12px; }
+  .sub { color: #5a6577; font-size: 12px; margin: 0 0 18px; }
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 3px 14px; font-size: 12.5px; margin: 10px 0 4px; }
+  .kv b { color: #5a6577; font-weight: 600; }
+  .banner { display: inline-block; padding: 6px 14px; border-radius: 5px; font-weight: 700; letter-spacing: 0.05em; }
+  .risk-high, .risk-critical { background: #fbe4de; color: #a11b1b; }
+  .risk-medium { background: #fdf0d6; color: #8a5a00; }
+  .risk-low, .risk-info { background: #dff3ea; color: #0f6f4b; }
+  .scores { display: flex; gap: 22px; margin: 12px 0; font-size: 13px; }
+  .score b { display: block; font-size: 20px; }
+  .card { border: 1px solid #e3e7ee; border-left: 4px solid #c9ced8; border-radius: 6px; padding: 12px 14px; margin: 10px 0; page-break-inside: avoid; }
+  .card.sev-high, .card.sev-critical { border-left-color: #d64545; }
+  .card.sev-medium { border-left-color: #e0a13e; }
+  .card.sev-low, .card.sev-info { border-left-color: #3f9e77; }
+  .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+  .sev { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: #eef1f6; }
+  .card.sev-high .sev, .card.sev-critical .sev { background: #d64545; color: #fff; }
+  .card.sev-low .sev { background: #3f9e77; color: #fff; }
+  .ctitle { font-weight: 700; font-size: 14px; }
+  .conf { margin-left: auto; color: #5a6577; font-size: 12px; }
+  .meta { color: #5a6577; font-size: 11.5px; margin: 3px 0; }
+  .risk { font-size: 12.5px; margin: 6px 0 0; }
+  .muted { color: #8a93a3; font-style: italic; }
+  code, pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  pre { background: #f6f7f9; border: 1px solid #e3e7ee; border-radius: 5px; padding: 9px; font-size: 11px; white-space: pre-wrap; word-break: break-word; margin: 4px 0; }
+  .prompt { background: #f6f7f9; border: 1px solid #e3e7ee; border-radius: 6px; padding: 14px; font-size: 11.5px; white-space: pre-wrap; word-break: break-word; }
+  .diff { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .diff-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: #5a6577; margin-bottom: 3px; }
+  .pagebreak { page-break-before: always; }
+  footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid #e3e7ee; color: #8a93a3; font-size: 10.5px; }
+  @media print { body { padding: 0; } h2 { page-break-after: avoid; } }
+</style></head><body>
+  <h1>Kitsune — Reverse-Guardrail Security Report</h1>
+  <p class="sub">Authorized red-team assessment · reconstruction, threat model &amp; hardening plan</p>
+  <div class="kv">
+    <b>Target</b><span>${esc(target)}</span>
+    <b>Run ID</b><span>${esc(activeRunId)}</span>
+    <b>Generated</b><span>${esc(now.toISOString().slice(0, 19).replace('T', ' '))} UTC-local</span>
+    <b>Rounds</b><span>${esc(String(status.current_round || '?'))} / ${esc(String(status.max_rounds || '?'))}</span>
+    <b>Reconstruction confidence</b><span>${pct(status.latest_confidence || report.overall_confidence)}%</span>
+    <b>Fragments recovered</b><span>${esc(String(status.total_fragments_count ?? (report.fragments_used || '?')))}</span>
+  </div>
+
+  <h2>Executive Summary</h2>
+  <p><span class="banner risk-${risk.toLowerCase()}">Overall risk: ${esc(risk)}</span></p>
+  <p>${esc(harden.executive_summary || 'This report reconstructs the effective system prompt of the target assistant from observed behavior, identifies structural weaknesses that make it exploitable, and provides a hardened prompt plus remediations to secure the deployment.')}</p>
+  <div class="scores">
+    <div class="score">Delimiter isolation <b>${pct(vulns.delimiter_isolation_score)}/100</b></div>
+    <div class="score">Directive ambiguity <b>${pct(vulns.directive_ambiguity_index)}/100</b></div>
+    <div class="score">Secret exposure <b>${pct(vulns.secret_exposure_risk)}/100</b></div>
+    <div class="score">Hardening <b>${pct(harden.before_hardening_score)} → ${pct(harden.after_hardening_score)}/100</b></div>
+  </div>
+
+  <h2>Identified Vulnerabilities</h2>
+  ${vulnRows}
+
+  <h2>Remediations to Apply</h2>
+  ${remRows}
+  ${archRecs.length ? `<p style="margin-top:14px"><strong>Architectural recommendations:</strong></p><ul>${archRecs.map(r => `<li>${esc(r)}</li>`).join('')}</ul>` : ''}
+
+  <div class="pagebreak"></div>
+  <h2>Hardened System Prompt (deploy this)</h2>
+  <div class="prompt">${esc(harden.hardened_system_prompt || 'Not available.')}</div>
+
+  <h2>Reconstructed Prompt (what was recoverable)</h2>
+  <div class="prompt">${esc(report.reconstructed_prompt || 'Not available.')}</div>
+  ${sectionRows ? `<h2>Recovered Sections</h2>${sectionRows}` : ''}
+  ${gaps.length ? `<h2>Residual Gaps (not recovered)</h2><ul>${gaps.map(g => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}
+
+  <footer>Generated by Kitsune / Reverse-Guardrail for an authorized security engagement. Handle as confidential. The reconstruction is inferred from model behavior and may be incomplete.</footer>
+</body></html>`;
   }
 
   function appendLog(msg, type = 'info') {

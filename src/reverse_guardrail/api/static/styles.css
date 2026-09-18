@@ -427,8 +427,26 @@ body.is-running .mask-eye {
 .dashboard-controls {
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
   margin: 10px 0 4px;
 }
+
+.btn-report {
+  padding: 6px 14px;
+  border: 1px solid var(--kin);
+  border-radius: 4px;
+  background: var(--kin);
+  color: var(--sumi-0, #080E1A);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+.btn-report:hover { background: var(--hi); border-color: var(--hi); }
+.btn-report:focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
+.btn-report:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-reset {
   padding: 6px 14px;
