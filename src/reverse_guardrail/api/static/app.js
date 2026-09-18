@@ -60,6 +60,7 @@ const I18N = {
     confThresholdHint: "On live targets (no ground truth) confidence is self-estimated and tends to over-report, so the run can stop after one round if this is low. Keep it high (0.95+) to keep probing across rounds — the run then stops on fragment stagnation or Max Rounds, not a single round.",
     multiturnDepthLabel: "Multi-turn Depth",
     btnLaunchAssessment: "Launch Reverse-Guardrail Assessment",
+    btnReset: "Reset view",
     btnRunningAssessment: "Assessment in Progress...",
     btnStopAssessment: "Stop",
     btnStoppingAssessment: "Stopping...",
@@ -161,6 +162,7 @@ const I18N = {
     confThresholdHint: "Sui target live (senza ground truth) la confidenza è auto-stimata e tende a sovrastimare, quindi con un valore basso il run può fermarsi dopo un solo round. Tienila alta (0.95+) per continuare a sondare round dopo round — così il run si ferma per stagnazione dei fragment o al raggiungimento dei Max Rounds, non dopo un round singolo.",
     multiturnDepthLabel: "Profondità Multi-turn",
     btnLaunchAssessment: "Avvia Reverse-Guardrail Assessment",
+    btnReset: "Azzera vista",
     btnRunningAssessment: "Assessment in Corso...",
     btnStopAssessment: "Stop",
     btnStoppingAssessment: "Interruzione...",
@@ -654,6 +656,8 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
 
       const data = await res.json();
       activeRunId = data.run_id;
+      // Remember this run so a page reload can re-render it instead of showing empty.
+      try { localStorage.setItem('kitsune_last_run', data.run_id); } catch (e) {}
       appendLog(`[Pipeline] Pipeline finished. Run ID: ${data.run_id}`, 'success');
 
       updateMetricsBar(data);
@@ -713,8 +717,8 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
       const res = await fetch(`/api/v1/pipeline/${runId}/report`);
       if (res.ok) {
         const report = await res.json();
-        reconstructedPromptContent.innerText = report.reconstructed_system_prompt || "No prompt synthesized.";
-        renderSections(report.sections || []);
+        reconstructedPromptContent.innerText = report.reconstructed_prompt || "No prompt synthesized.";
+        renderSections(report.covered_sections || []);
         renderGaps(report.gaps || []);
         appendLog(`[Report] System Prompt synthesized. Overall Confidence: ${(report.overall_confidence * 100).toFixed(1)}%`, 'success');
       }
@@ -764,12 +768,12 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
   function renderVulnerabilities(data) {
     if (!data) return;
 
-    if (vulnScoreDelimiter) vulnScoreDelimiter.innerText = `${data.delimiter_isolation_score || 0}/100`;
-    if (vulnScoreAmbiguity) vulnScoreAmbiguity.innerText = `${data.directive_ambiguity_score || 0}/100`;
-    if (vulnScoreSecret) vulnScoreSecret.innerText = `${data.secret_exposure_risk_score || 0}/100`;
+    if (vulnScoreDelimiter) vulnScoreDelimiter.innerText = `${Math.round((data.delimiter_isolation_score || 0) * 100)}/100`;
+    if (vulnScoreAmbiguity) vulnScoreAmbiguity.innerText = `${Math.round((data.directive_ambiguity_index || 0) * 100)}/100`;
+    if (vulnScoreSecret) vulnScoreSecret.innerText = `${Math.round((data.secret_exposure_risk || 0) * 100)}/100`;
 
     if (vulnScoreOverall) {
-      const sev = (data.overall_severity || 'MEDIUM').toUpperCase();
+      const sev = (data.overall_risk_rating || 'MEDIUM').toUpperCase();
       vulnScoreOverall.innerText = sev;
       vulnScoreOverall.className = `sev-badge sev-${sev.toLowerCase()}`;
     }
@@ -785,15 +789,15 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
         <div class="vuln-card">
           <div class="vuln-card-header">
             <div>
-              <div class="vuln-title">${escapeHtml(v.title || v.vulnerability_type)}</div>
-              <div class="vuln-meta">${escapeHtml(v.owasp_category || 'OWASP-LLM01')} • Severity: <strong>${escapeHtml(v.severity)}</strong></div>
+              <div class="vuln-title">${escapeHtml(v.title || v.category || 'Vulnerability')}</div>
+              <div class="vuln-meta">${escapeHtml(v.owasp_reference || 'OWASP-LLM01')} • Severity: <strong>${escapeHtml(v.severity)}</strong></div>
             </div>
             <span class="sev-badge sev-${(v.severity || 'low').toLowerCase()}">${escapeHtml(v.severity)}</span>
           </div>
           <div class="vuln-desc">${escapeHtml(v.description)}</div>
           ${v.affected_section ? `<div class="vuln-section-tag">Section: <code>${escapeHtml(v.affected_section)}</code></div>` : ''}
           <div class="vuln-remediation-box">
-            <strong>${currentLang === 'en' ? 'Recommended Fix:' : 'Fix Raccomandato:'}</strong> ${escapeHtml(v.remediation_recommendation)}
+            <strong>${currentLang === 'en' ? 'Risk:' : 'Rischio:'}</strong> ${escapeHtml(v.risk_explanation || v.remediation_recommendation || '')}
           </div>
         </div>
       `).join('');
@@ -804,31 +808,31 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
   function renderHardeningReport(data) {
     if (!data) return;
 
-    if (scoreBeforeHardening) scoreBeforeHardening.innerText = `${data.score_before || 0}/100`;
-    if (scoreAfterHardening) scoreAfterHardening.innerText = `${data.score_after || 0}/100`;
+    if (scoreBeforeHardening) scoreBeforeHardening.innerText = `${Math.round((data.before_hardening_score || 0) * 100)}/100`;
+    if (scoreAfterHardening) scoreAfterHardening.innerText = `${Math.round((data.after_hardening_score || 0) * 100)}/100`;
     if (hardeningExecSummary) hardeningExecSummary.innerText = data.executive_summary || "Report generated.";
     if (hardenedPromptContent) hardenedPromptContent.innerText = data.hardened_system_prompt || "Hardened prompt unavailable.";
 
     // Render section-by-section diffs
     if (remediationsContainer) {
-      const remediations = data.section_remediations || [];
+      const remediations = data.remediations || [];
       if (remediations.length === 0) {
         remediationsContainer.innerHTML = `<div class="empty-state">${currentLang === 'en' ? 'No section modifications required.' : 'Nessuna modifica di sezione richiesta.'}</div>`;
       } else {
         remediationsContainer.innerHTML = remediations.map(r => `
           <div class="remediation-card">
             <div class="remediation-title">
-              <span>Section: <strong>${escapeHtml(r.section_name)}</strong></span>
+              <span>Section: <strong>${escapeHtml(r.affected_section)}</strong></span>
               <span class="badge badge-hardened">HARDENED</span>
             </div>
             <div class="diff-grid">
               <div class="diff-box diff-original">
                 <div class="diff-label">${currentLang === 'en' ? 'Original Synthesized Section' : 'Sezione Ricostruita Originale'}</div>
-                <div class="diff-content">${escapeHtml(r.original_content || '(Empty)')}</div>
+                <div class="diff-content">${escapeHtml(r.original_text || '(Empty)')}</div>
               </div>
               <div class="diff-box diff-hardened">
                 <div class="diff-label">${currentLang === 'en' ? 'Hardened Defensive Section' : 'Sezione Hardened Difensiva'}</div>
-                <div class="diff-content">${escapeHtml(r.hardened_content)}</div>
+                <div class="diff-content">${escapeHtml(r.hardened_text)}</div>
               </div>
             </div>
             <div class="rationale-box">
@@ -883,10 +887,10 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
     sectionsContainer.innerHTML = sections.map(s => `
       <div class="section-card">
         <div class="section-card-header">
-          <span class="section-title">${escapeHtml(s.title || s.name || 'Section')}</span>
+          <span class="section-title">${escapeHtml(s.section_name || s.title || s.name || 'Section')}</span>
           <span class="conf-badge">${Math.round((s.confidence || 0) * 100)}%</span>
         </div>
-        <div class="section-body">${escapeHtml(s.content || s.text || '')}</div>
+        <div class="section-body">${escapeHtml(s.inferred_content || s.content || s.text || '')}</div>
       </div>
     `).join('');
   }
@@ -916,6 +920,49 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
     `).join('');
   }
 
+  // --- Restore the last run on page load (the registry is in-memory, so a run
+  //     survives a reload as long as the server has not restarted). Without this
+  //     a reload shows an empty dashboard even though the results still exist.
+  async function restoreLastRun() {
+    let rid = null;
+    try { rid = localStorage.getItem('kitsune_last_run'); } catch (e) {}
+    if (!rid) return;
+    try {
+      const res = await fetch(`/api/v1/pipeline/${rid}/status`);
+      if (!res.ok) {
+        // Server restarted or run gone — forget it so we don't keep retrying.
+        try { localStorage.removeItem('kitsune_last_run'); } catch (e) {}
+        return;
+      }
+      const data = await res.json();
+      activeRunId = rid;
+      updateMetricsBar(data);
+      if (metricTarget) metricTarget.innerText = rid;
+      await fetchReport(rid);
+      await fetchFragments(rid);
+      await fetchPhase2Reports(rid);
+      appendLog(`[Restore] Reloaded previous run ${rid}.`, 'info');
+    } catch (e) {
+      try { localStorage.removeItem('kitsune_last_run'); } catch (e2) {}
+    }
+  }
+
+  // --- Reset the dashboard view. Client-side only: it forgets the shown run and
+  //     reloads to a clean state. It does NOT touch the audit log (a security
+  //     record) and does not wipe the DB — that is cleared on the next run.
+  const btnReset = document.getElementById('btnReset');
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      const msg = currentLang === 'en'
+        ? 'Reset the dashboard view? Fragment data is cleared on the next run anyway; the audit trail is kept.'
+        : 'Azzerare la vista della dashboard? I fragment si azzerano comunque al prossimo run; l\'audit trail resta.';
+      if (!confirm(msg)) return;
+      try { localStorage.removeItem('kitsune_last_run'); } catch (e) {}
+      activeRunId = null;
+      location.reload();
+    });
+  }
+
   function appendLog(msg, type = 'info') {
     const d = new Date();
     const timeStr = d.toTimeString().split(' ')[0];
@@ -940,4 +987,7 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
 
   // Initialize Language (Default EN)
   setLanguage(currentLang);
+
+  // Re-render the last run's results (if any) so a reload isn't blank.
+  restoreLastRun();
 });
