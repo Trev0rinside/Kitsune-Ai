@@ -162,6 +162,17 @@ async def stop_pipeline(run_id: Optional[str] = None) -> Dict[str, Any]:
     }
 
 
+@router.get("/pipeline/latest")
+async def get_latest_run() -> Dict[str, Any]:
+    """Return the id of the most recent run in the in-memory registry (or null).
+
+    Lets the dashboard re-render a run it did not launch itself — e.g. one started
+    from the extension popup, which never wrote this page's localStorage.
+    """
+    run_id = next(reversed(_RUNNERS), None) if _RUNNERS else None
+    return {"run_id": run_id}
+
+
 @router.get("/pipeline/{run_id}/status", response_model=PipelineStatusResponse)
 async def get_pipeline_status(run_id: str) -> PipelineStatusResponse:
     """Retrieve execution status and confidence progression of an assessment run."""

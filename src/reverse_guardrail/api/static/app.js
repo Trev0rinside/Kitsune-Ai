@@ -925,28 +925,39 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
   // --- Restore the last run on page load (the registry is in-memory, so a run
   //     survives a reload as long as the server has not restarted). Without this
   //     a reload shows an empty dashboard even though the results still exist.
+  async function fetchStatusOrNull(rid) {
+    if (!rid) return null;
+    try {
+      const res = await fetch(`/api/v1/pipeline/${rid}/status`);
+      return res.ok ? await res.json() : null;
+    } catch (e) { return null; }
+  }
+
   async function restoreLastRun() {
     let rid = null;
     try { rid = localStorage.getItem('kitsune_last_run'); } catch (e) {}
-    if (!rid) return;
-    try {
-      const res = await fetch(`/api/v1/pipeline/${rid}/status`);
-      if (!res.ok) {
-        // Server restarted or run gone — forget it so we don't keep retrying.
-        try { localStorage.removeItem('kitsune_last_run'); } catch (e) {}
-        return;
-      }
-      const data = await res.json();
-      activeRunId = rid;
-      updateMetricsBar(data);
-      if (metricTarget) metricTarget.innerText = rid;
-      await fetchReport(rid);
-      await fetchFragments(rid);
-      await fetchPhase2Reports(rid);
-      appendLog(`[Restore] Reloaded previous run ${rid}.`, 'info');
-    } catch (e) {
-      try { localStorage.removeItem('kitsune_last_run'); } catch (e2) {}
+
+    // Prefer the run this page launched; if it's gone (or there was none, e.g. the
+    // run was started from the extension popup), fall back to the server's most
+    // recent run so the dashboard still shows results after a reload.
+    let data = await fetchStatusOrNull(rid);
+    if (!data) {
+      try { localStorage.removeItem('kitsune_last_run'); } catch (e) {}
+      try {
+        const latest = await fetch('/api/v1/pipeline/latest');
+        rid = latest.ok ? (await latest.json()).run_id : null;
+      } catch (e) { rid = null; }
+      data = await fetchStatusOrNull(rid);
     }
+    if (!data || !rid) return;
+
+    activeRunId = rid;
+    updateMetricsBar(data);
+    if (metricTarget) metricTarget.innerText = rid;
+    await fetchReport(rid);
+    await fetchFragments(rid);
+    await fetchPhase2Reports(rid);
+    appendLog(`[Restore] Loaded run ${rid}.`, 'info');
   }
 
   // --- Reset the dashboard view. Client-side only: it forgets the shown run and
