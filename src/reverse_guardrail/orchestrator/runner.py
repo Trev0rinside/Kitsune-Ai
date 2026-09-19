@@ -109,6 +109,10 @@ class PipelineRunner:
         """Initialize DB store and initial state."""
         await self.store.initialize()
         await self.store.clear()
+        # A new run replaces the last one everywhere: wipe the persisted reports too
+        # (they'd otherwise show a stale target's results until this run completes).
+        from reverse_guardrail.core.run_persistence import clear_run_state
+        clear_run_state()
         self.is_cancelled = False
         run_id = f"RUN-{uuid4().hex[:8].upper()}"
         self.state = PipelineState(

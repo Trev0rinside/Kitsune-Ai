@@ -17,11 +17,46 @@ from reverse_guardrail.storage.sqlite_store import SQLiteGraphVectorStore
 from reverse_guardrail.core.relay_manager import relay_manager
 from reverse_guardrail.core.capture_calibrator import calibrate_selectors
 from reverse_guardrail.core.logger import logger
+from reverse_guardrail.core.run_persistence import save_run_state, load_run_state
+from reverse_guardrail.agents.vulnerability_analyzer import VulnerabilityAnalyzerAgent
+from reverse_guardrail.agents.hardening_reporter import HardeningReporterAgent
 
 router = APIRouter(prefix="/api/v1", tags=["Reverse Guardrail"])
 
 # In-memory registry of active runners for the service layer
 _RUNNERS: Dict[str, PipelineRunner] = {}
+
+
+class _PersistedRunner:
+    """A lightweight stand-in for a PipelineRunner rehydrated from disk after a
+    restart. It exposes the attributes the read endpoints touch — `state` (loaded
+    from the saved reports) and `store` (a fresh handle on the same SQLite DB, so
+    fragments/graph still resolve) — plus default Phase-2 agents that are never
+    invoked for an already-completed run."""
+
+    def __init__(self, state, store):
+        self.state = state
+        self.store = store
+        self.vulnerability_analyzer = VulnerabilityAnalyzerAgent()
+        self.hardening_reporter = HardeningReporterAgent()
+
+
+async def rehydrate_persisted_run() -> None:
+    """On startup, load the last run's reports from disk into the registry so the
+    dashboard shows them after a restart. No-op if the registry already has runs
+    or nothing was persisted."""
+    if _RUNNERS:
+        return
+    state = load_run_state()
+    if not state:
+        return
+    try:
+        store = SQLiteGraphVectorStore()
+        await store.initialize()  # CREATE TABLE IF NOT EXISTS — non-destructive
+        _RUNNERS[state.run_id] = _PersistedRunner(state, store)
+        logger.info(f"[RunPersistence] Rehydrated run {state.run_id} from disk.")
+    except Exception as err:
+        logger.warning(f"[RunPersistence] Rehydrate failed: {err}")
 
 
 class PipelineStartRequest(BaseModel):
@@ -106,6 +141,9 @@ async def start_pipeline(request: PipelineStartRequest) -> PipelineStatusRespons
         # Execute the pipeline
         final_state = await runner.run()
 
+        # Persist the completed run's reports so they survive a server restart.
+        save_run_state(final_state)
+
         latest_conf = (
             final_state.latest_report.overall_confidence
             if final_state.latest_report
@@ -169,6 +207,7 @@ async def get_latest_run() -> Dict[str, Any]:
     Lets the dashboard re-render a run it did not launch itself — e.g. one started
     from the extension popup, which never wrote this page's localStorage.
     """
+    await rehydrate_persisted_run()  # lazy fallback if startup rehydrate hasn't run
     run_id = next(reversed(_RUNNERS), None) if _RUNNERS else None
     return {"run_id": run_id}
 

@@ -65,6 +65,13 @@ def create_app() -> FastAPI:
         except Exception:
             await relay_manager.unregister(websocket)
 
+    @app.on_event("startup")
+    async def _rehydrate_last_run() -> None:
+        # Restore the last completed run's reports from disk so a restart (or a
+        # --reload) doesn't blank the dashboard; a new run clears the persisted copy.
+        from reverse_guardrail.api.routes import rehydrate_persisted_run
+        await rehydrate_persisted_run()
+
     app.include_router(router)
     return app
 
