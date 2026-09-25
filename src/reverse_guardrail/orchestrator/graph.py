@@ -156,12 +156,15 @@ class ReverseGuardrailWorkflow:
         results = state.metadata.get(f"round_{state.current_round}_results", [])
         extracted_this_round = []
         refusals = 0
+        no_response = 0
 
         initial_count = await self.store.count_fragments()
 
         for attempt, response in results:
             if response.refused:
                 refusals += 1
+            if not (response.raw_response or "").strip():
+                no_response += 1
             frags = await self.inspectioner.inspect_and_extract(
                 attempt=attempt,
                 response=response,
@@ -185,6 +188,7 @@ class ReverseGuardrailWorkflow:
             "metadata": {
                 **state.metadata,
                 f"round_{state.current_round}_refusals": refusals,
+                f"round_{state.current_round}_no_response": no_response,
                 f"round_{state.current_round}_extracted_count": len(extracted_this_round),
             },
         }
@@ -231,6 +235,24 @@ class ReverseGuardrailWorkflow:
             return {"status": PipelineStatus.ABORTED_UNAUTHORIZED}
 
         updates: Dict[str, Any] = {}
+
+        # 0. Target unresponsive: if a whole round produced no genuine output, the
+        # target is rate-limited or blocking (e.g. Mistral's "wait before asking
+        # again" banner). Stop now instead of hammering a silent chat round after
+        # round — this beats waiting for fragment stagnation to time it out.
+        rnd = state.current_round
+        rnd_results = state.metadata.get(f"round_{rnd}_results", [])
+        rnd_no_response = state.metadata.get(f"round_{rnd}_no_response", 0)
+        if rnd_results and rnd_no_response == len(rnd_results):
+            return {
+                **updates,
+                "status": PipelineStatus.COMPLETED,
+                "stop_reason": (
+                    f"Target not responding: all {len(rnd_results)} probes in round {rnd} "
+                    "returned no output (rate-limited or blocked)."
+                ),
+            }
+
         effective_score = (
             state.latest_report.overall_confidence if state.latest_report else 0.0
         )
