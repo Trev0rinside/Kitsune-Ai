@@ -44,6 +44,9 @@ htmlcov/
 *.sqlite3
 *.db-journal
 
+# Persisted run state (runtime, per-machine)
+reverse_guardrail_run.json
+
 # Operating System & IDE
 .DS_Store
 .vscode/

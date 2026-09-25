@@ -237,6 +237,18 @@ class TesterAgent(BaseAgent):
             )
             response = await target.execute_attempt(attempt, history=history)
             results.append((attempt, response))
+
+            # If the target produced no genuine output (rate-limited, blocked, or
+            # timed out — empty response / 504), end the conversation here. There is
+            # nothing to craft a follow-up from, and continuing would just keep
+            # typing context-less "follow-ups" into an unresponsive chat.
+            if not (response.raw_response or "").strip():
+                self.logger.info(
+                    f"[Tester] Round {round_id} - Multi-turn {turn + 1}/{depth}: "
+                    "no response from target (rate-limited/blocked?); ending conversation early."
+                )
+                break
+
             history = history + [
                 {"role": "user", "content": attempt.payload},
                 {"role": "assistant", "content": response.raw_response},
