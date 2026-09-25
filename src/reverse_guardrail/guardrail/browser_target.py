@@ -1,5 +1,7 @@
 """Browser automation target adapter using Playwright with real Chrome profile support and anti-detection for web chat guardrails."""
 
+from __future__ import annotations  # keep playwright type hints lazy so the module imports without it
+
 import asyncio
 import json
 import os
@@ -7,7 +9,8 @@ import shutil
 import time
 from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
-from playwright.async_api import Browser, BrowserContext, Page, async_playwright
+# playwright is imported lazily inside initialize_browser() — browser mode is
+# optional, so a missing playwright must not break the whole app at import time.
 from reverse_guardrail.core.logger import logger
 from reverse_guardrail.core.models import (
     GuardrailResponse,
@@ -135,6 +138,15 @@ class BrowserGuardrailTarget(BaseGuardrailTarget):
         """Launch persistent Chrome context, connect via CDP, or fallback to standalone browser."""
         if self._context is not None:
             return
+
+        try:
+            from playwright.async_api import async_playwright
+        except ModuleNotFoundError as exc:
+            raise RuntimeError(
+                "Browser target mode requires Playwright, which is not installed. "
+                "Install it with: uv add playwright && uv run playwright install chromium. "
+                "(Not needed for extension / internal / http / mock modes.)"
+            ) from exc
 
         self._playwright = await async_playwright().start()
 
