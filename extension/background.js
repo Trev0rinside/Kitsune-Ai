@@ -62,6 +62,8 @@ function connectWebSocket() {
           await handleProbeRequest(message);
         } else if (message.type === "PING") {
           sendWsMessage({ type: "PONG" });
+        } else if (message.type === "CLEAR_CAPTURE_CACHE") {
+          await clearCaptureCache();
         }
       } catch (err) {
         console.error("[Kitsune Relay] Error parsing WS message:", err);
@@ -164,6 +166,19 @@ async function findTargetTab(requestedTargetUrl = null) {
     console.error("[Kitsune Relay] Error querying tabs:", err);
   }
   return null;
+}
+
+// --- Forget learned capture selectors (triggered from the dashboard via WS) ---
+async function clearCaptureCache() {
+  try {
+    const all = await chrome.storage.local.get(null);
+    const keys = Object.keys(all).filter(k => k.startsWith("kitsune_capture_"));
+    if (keys.length) await chrome.storage.local.remove(keys);
+    console.log(`[Kitsune Relay] Cleared ${keys.length} cached capture profile(s).`);
+    sendWsMessage({ type: "CACHE_CLEARED", count: keys.length });
+  } catch (err) {
+    console.error("[Kitsune Relay] Failed to clear capture cache:", err);
+  }
 }
 
 // --- Handle Probe Request from Kitsune Engine ---
@@ -376,6 +391,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     launchRun(request.engagement_id, request.target_url, request.params)
       .then((r) => sendResponse(r))
       .catch((err) => sendResponse({ ok: false, error: err.message || String(err) }));
+    return true; // async sendResponse
+  }
+
+  if (request.type === "STOP_RUN") {
+    fetch(`${API_BASE}/api/v1/pipeline/stop`, { method: "POST" })
+      .then((r) => r.json())
+      .then((data) => {
+        relayStats.runInFlight = false;
+        chrome.action.setBadgeText({ text: isConnected ? "ON" : "OFF" });
+        console.log("[Kitsune Relay] Run stopped:", data);
+        sendResponse({ ok: true, detail: data });
+      })
+      .catch((err) => {
+        console.error("[Kitsune Relay] Stop failed:", err);
+        sendResponse({ ok: false, error: err.message || String(err) });
+      });
     return true; // async sendResponse
   }
 

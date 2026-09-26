@@ -40,6 +40,11 @@ class _PersistedRunner:
         self.vulnerability_analyzer = VulnerabilityAnalyzerAgent()
         self.hardening_reporter = HardeningReporterAgent()
 
+    def cancel(self) -> None:
+        """A rehydrated run is already finished — nothing to cancel. Present so the
+        stop endpoint can iterate every registry entry uniformly."""
+        return None
+
 
 async def rehydrate_persisted_run() -> None:
     """On startup, load the last run's reports from disk into the registry so the
@@ -115,6 +120,15 @@ async def calibrate_capture(request: CalibrateCaptureRequest) -> CalibrateCaptur
         f"[calibrate] url={request.url} snapshot_len={len(request.dom_snapshot)} -> {result}"
     )
     return CalibrateCaptureResponse(**result)
+
+
+@router.post("/relay/clear-capture-cache")
+async def clear_capture_cache() -> Dict[str, Any]:
+    """Tell the connected extension to forget its learned capture selectors, so the
+    next probe recalibrates. Needed because the dashboard can't reach the
+    extension's chrome.storage directly."""
+    sent = await relay_manager.clear_capture_cache()
+    return {"ok": sent, "detail": "Sent to extension." if sent else "No extension connected."}
 
 
 @router.get("/audit/logs", response_model=List[AuditLogEntry])

@@ -62,6 +62,7 @@ const I18N = {
     btnLaunchAssessment: "Launch Reverse-Guardrail Assessment",
     btnReset: "Reset view",
     btnReport: "📄 Generate PDF Report",
+    btnClearCache: "🧹 Clear capture cache",
     btnRunningAssessment: "Assessment in Progress...",
     btnStopAssessment: "Stop",
     btnStoppingAssessment: "Stopping...",
@@ -165,6 +166,7 @@ const I18N = {
     btnLaunchAssessment: "Avvia Reverse-Guardrail Assessment",
     btnReset: "Azzera vista",
     btnReport: "📄 Genera Report PDF",
+    btnClearCache: "🧹 Svuota cache cattura",
     btnRunningAssessment: "Assessment in Corso...",
     btnStopAssessment: "Stop",
     btnStoppingAssessment: "Interruzione...",
@@ -963,6 +965,24 @@ You are 'Guardian Support AI', the official tier-2 enterprise virtual assistant 
   // --- Reset the dashboard view. Client-side only: it forgets the shown run and
   //     reloads to a clean state. It does NOT touch the audit log (a security
   //     record) and does not wipe the DB — that is cleared on the next run.
+  // Ask the extension (via the relay) to forget learned capture selectors so the
+  // next probe recalibrates. The dashboard can't touch chrome.storage directly.
+  const btnClearCache = document.getElementById('btnClearCache');
+  if (btnClearCache) {
+    btnClearCache.addEventListener('click', async () => {
+      const label = btnClearCache.innerText;
+      btnClearCache.disabled = true;
+      try {
+        const res = await fetch('/api/v1/relay/clear-capture-cache', { method: 'POST' });
+        const data = await res.json();
+        btnClearCache.innerText = data.ok ? '✓ Cache cleared' : '⚠ No extension connected';
+      } catch (e) {
+        btnClearCache.innerText = '⚠ Failed';
+      }
+      setTimeout(() => { btnClearCache.innerText = label; btnClearCache.disabled = false; }, 2000);
+    });
+  }
+
   const btnReset = document.getElementById('btnReset');
   if (btnReset) {
     btnReset.addEventListener('click', () => {

@@ -41,6 +41,19 @@ class ExtensionRelayManager:
         """Returns true if at least one Chrome Extension client is actively connected."""
         return len(self.active_connections) > 0
 
+    async def clear_capture_cache(self) -> bool:
+        """Ask the connected extension to forget its learned capture selectors.
+
+        Fire-and-forget over the WS: the dashboard cannot touch the extension's
+        chrome.storage directly, so it routes the clear through here.
+        """
+        if not self.is_connected():
+            return False
+        ws = self.active_connections[-1]
+        await ws.send_text(json.dumps({"type": "CLEAR_CAPTURE_CACHE"}))
+        logger.info("[ExtensionRelay] Sent CLEAR_CAPTURE_CACHE to extension.")
+        return True
+
     def cancel_all_pending_probes(self) -> None:
         """Cancel any in-flight probe futures immediately."""
         for attempt_id, future in list(self._pending_probes.items()):

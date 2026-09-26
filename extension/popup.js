@@ -79,13 +79,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateLaunchButton(connected) {
     if (!btnLaunch) return;
-    const disabled = runInFlight || !connected;
-    btnLaunch.disabled = disabled;
-    btnLaunch.innerText = runInFlight ? 'Run in flight…' : 'Launch test on bound tab';
+    // While a run is in flight the button becomes a Stop control; otherwise it
+    // launches (disabled only when the engine isn't connected).
+    btnLaunch.classList.toggle('is-stop', runInFlight);
+    if (runInFlight) {
+      btnLaunch.disabled = false;
+      btnLaunch.innerText = '⏹ Stop test';
+    } else {
+      btnLaunch.disabled = !connected;
+      btnLaunch.innerText = 'Launch test on bound tab';
+    }
+  }
+
+  function stopRun() {
+    btnLaunch.disabled = true;
+    btnLaunch.innerText = 'Stopping…';
+    launchHint.innerText = 'Aborting run…';
+    chrome.runtime.sendMessage({ type: 'STOP_RUN' }, (res) => {
+      if (chrome.runtime.lastError || !res) {
+        launchHint.innerText = 'Service worker asleep — retry.';
+      } else {
+        runInFlight = false;
+        launchHint.innerText = res.ok ? 'Run stopped.' : (res.error || 'Stop failed.');
+      }
+      updateStatus();
+    });
   }
 
   if (btnLaunch) {
     btnLaunch.addEventListener('click', () => {
+      // Running → this click stops it.
+      if (runInFlight) { stopRun(); return; }
+
       const engagement = (engagementId.value || '').trim();
       if (!engagement) {
         launchHint.innerText = 'Engagement ID is required.';
@@ -132,6 +157,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   btnRefresh.addEventListener('click', updateStatus);
+
+  // Forget learned capture selectors (per-site) so the next probe recalibrates.
+  const btnClearCache = document.getElementById('btnClearCache');
+  if (btnClearCache) {
+    btnClearCache.addEventListener('click', async () => {
+      try {
+        const all = await chrome.storage.local.get(null);
+        const keys = Object.keys(all).filter(k => k.startsWith('kitsune_capture_'));
+        if (keys.length) await chrome.storage.local.remove(keys);
+        btnClearCache.innerText = keys.length ? `Cleared ${keys.length}` : 'Nothing cached';
+      } catch (e) {
+        btnClearCache.innerText = 'Failed';
+      }
+      setTimeout(() => { btnClearCache.innerText = 'Clear cache'; }, 1800);
+    });
+  }
 
   updateStatus();
   setInterval(updateStatus, 1200);

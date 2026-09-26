@@ -367,6 +367,9 @@ body {
 .btn-launch:hover:not(:disabled) { background: var(--hi); border-color: var(--hi); }
 .btn-launch:focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
 .btn-launch:disabled { opacity: 0.45; cursor: not-allowed; background: var(--ai-3); border-color: var(--ai-3); color: var(--text-mute); }
+/* While a run is in flight the launch button becomes a Stop control. */
+.btn-launch.is-stop { background: var(--shu); border-color: var(--shu); color: var(--gofun); }
+.btn-launch.is-stop:hover:not(:disabled) { background: var(--shu-deep); border-color: var(--shu-deep); }
 
 .launch-hint {
   font-family: var(--font-mono);
